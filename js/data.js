@@ -323,23 +323,55 @@ async function loadDailyPlans() {
     if (!el) return;
     const plans = (res.success && res.plans) ? res.plans : [];
     if (!plans.length) {
+      AppState.plansCache = [];
       el.innerHTML = '<div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>ยังไม่มีแผนงานวันนี้</span></div>';
       return;
     }
-    el.innerHTML = plans.map(p => `
+    AppState.plansCache = plans;
+    el.innerHTML = plans.map(p => {
+      const isOwner = p.username === AppState.currentUser.username || AppState.isAdmin;
+      const actions = isOwner ? `
+        <div style="display:flex;gap:12px;margin-left:12px;">
+          <button onclick="openPlanModal('${p.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:16px"><i class="fi fi-rr-edit"></i></button>
+          <button onclick="deletePlan('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px"><i class="fi fi-rr-trash"></i></button>
+        </div>` : '';
+      return `
       <div class="plan-card">
-        <div class="plan-header">
-          <span class="plan-name">${escHtml(p.fullName)}</span>
-          <span class="plan-time">${escHtml(p.timestamp)}</span>
+        <div class="plan-header" style="align-items:flex-start">
+          <div style="flex:1">
+            <div class="plan-name">${escHtml(p.fullName)}</div>
+            <div class="plan-time">${escHtml(p.timestamp)}</div>
+          </div>
+          ${actions}
         </div>
         <div class="plan-tasks">${(p.tasks || []).map(t => `<div class="plan-task-item"><i class="fi fi-rr-check-circle"></i> ${escHtml(t)}</div>`).join('')}</div>
         ${p.note ? `<div class="plan-note">${escHtml(p.note)}</div>` : ''}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch (e) { console.error('Plans error:', e); }
+}
+
+function openPlanModal(planId = '') {
+  document.getElementById('planId').value = planId;
+  const modalTitle = document.querySelector('#planModal .modal-header h3');
+  if (planId) {
+    const p = (AppState.plansCache || []).find(x => x.id === planId);
+    if (p) {
+      document.getElementById('planTasks').value = p.tasks.join('\n');
+      document.getElementById('planNote').value = p.note || '';
+    }
+    if (modalTitle) modalTitle.innerHTML = '<i class="fi fi-rr-edit" style="margin-right:8px"></i> แก้ไขแผนงาน';
+  } else {
+    document.getElementById('planTasks').value = '';
+    document.getElementById('planNote').value = '';
+    if (modalTitle) modalTitle.innerHTML = '<i class="fi fi-rr-clipboard-list-check" style="margin-right:8px"></i> เพิ่มแผนงาน';
+  }
+  openModal('planModal');
 }
 
 async function submitDailyPlan(e) {
   e.preventDefault();
+  const id = document.getElementById('planId')?.value;
   const tasksText = document.getElementById('planTasks')?.value.trim();
   const note = document.getElementById('planNote')?.value.trim();
   if (!tasksText) { Swal.fire('แจ้งเตือน', 'กรุณากรอกรายการงาน', 'warning'); return; }
@@ -347,17 +379,36 @@ async function submitDailyPlan(e) {
   const tasks = tasksText.split('\n').filter(t => t.trim());
   showLoading(true);
   try {
-    const res = await API.call('saveDailyPlan', {
-      username: AppState.currentUser.username,
-      fullName: AppState.currentUser.fullName,
-      tasks: tasks, note: note
-    });
+    let res;
+    if (id) {
+      res = await API.call('updateDailyPlan', { id: id, username: AppState.currentUser.username, tasks: tasks, note: note });
+    } else {
+      res = await API.call('saveDailyPlan', {
+        username: AppState.currentUser.username,
+        fullName: AppState.currentUser.fullName,
+        tasks: tasks, note: note
+      });
+    }
     showLoading(false);
     if (res.success) {
       closeModal('planModal');
-      showToast('บันทึกแผนงานสำเร็จ');
+      showToast(id ? 'อัปเดตแผนงานสำเร็จ' : 'บันทึกแผนงานสำเร็จ');
       loadDailyPlans();
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
     }
+  } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
+
+async function deletePlan(id) {
+  const r = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'คุณต้องการลบแผนงานนี้ใช่หรือไม่', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
+  if (!r.isConfirmed) return;
+  showLoading(true);
+  try {
+    const res = await API.call('deleteDailyPlan', { id: id, username: AppState.currentUser.username });
+    showLoading(false);
+    if (res.success) { showToast('ลบแผนงานสำเร็จ'); loadDailyPlans(); }
+    else Swal.fire('ผิดพลาด', res.message, 'error');
   } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
 }
 
