@@ -283,7 +283,10 @@ function renderMemberList() {
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div style="flex:1;min-width:0">
-          <h4 class="member-name">${escHtml(m.fullName)} ${m.role === 'admin' ? '<span class="admin-badge">ADMIN</span>' : ''}</h4>
+          <h4 class="member-name">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${m.isWorking ? 'var(--success)' : 'var(--danger)'};margin-right:6px;box-shadow:0 0 0 2px ${m.isWorking ? 'var(--success-bg)' : 'var(--danger-bg)'}" title="${m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว'}"></span>
+            ${escHtml(m.fullName)} ${m.role === 'admin' ? '<span class="admin-badge">ADMIN</span>' : ''}
+          </h4>
           <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
         </div>
       </div>
