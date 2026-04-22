@@ -1,0 +1,459 @@
+/**
+ * WFH System - Data Operations
+ * Check-in/out, Members CRUD, Plans
+ */
+
+// ============================================
+// CHECK-IN / CHECK-OUT
+// ============================================
+async function handleCheckIn() {
+  const last = AppState.latestLog;
+  if (last && last.type === 'Check-in') {
+    // Check-out flow
+    const r = await Swal.fire({
+      title: 'ยืนยันการออกงาน?', icon: 'question',
+      showCancelButton: true, confirmButtonColor: '#ef4444',
+      cancelButtonText: 'ยกเลิก', confirmButtonText: 'ออกงาน'
+    });
+    if (r.isConfirmed) performGPSAction('Check-out');
+    return;
+  }
+  // Check-in flow
+  performGPSAction('Check-in');
+}
+
+async function performGPSAction(type) {
+  showLoading(true);
+  try {
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true, timeout: 15000, maximumAge: 0
+      });
+    });
+
+    const payload = {
+      username: AppState.currentUser.username,
+      fullName: AppState.currentUser.fullName,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy
+    };
+
+    const action = type === 'Check-in' ? 'checkIn' : 'checkOut';
+    const res = await API.call(action, payload);
+    showLoading(false);
+
+    if (res.success) {
+      if (type === 'Check-in' && res.locationStatus) {
+        const isHome = res.locationStatus === 'at_home';
+        const icon = isHome ? '🏠' : '⚠️';
+        const statusText = isHome
+          ? `อยู่ในพื้นที่บ้าน`
+          : res.locationStatus === 'outside'
+            ? `อยู่นอกพื้นที่บ้าน (${res.distFromHome}m)`
+            : 'ยังไม่ได้ตั้งค่าพิกัดบ้าน';
+        Swal.fire({
+          icon: isHome ? 'success' : 'warning',
+          title: `${icon} เข้างานสำเร็จ`,
+          html: `<div style="font-size:0.9rem;color:#475569;">${statusText}</div>`,
+          timer: 2500, showConfirmButton: false
+        });
+      } else {
+        showToast(type === 'Check-in' ? 'เข้างานสำเร็จ' : 'ออกงานสำเร็จ');
+      }
+      renderUserDashboard();
+    } else {
+      Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถบันทึกได้', 'error');
+    }
+  } catch (err) {
+    showLoading(false);
+    if (err.code === 1) {
+      Swal.fire('ไม่อนุญาต GPS', 'กรุณาเปิดการเข้าถึงตำแหน่งที่ตั้ง', 'error');
+    } else {
+      Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถระบุตำแหน่งได้', 'error');
+    }
+  }
+}
+
+// ============================================
+// USER DASHBOARD
+// ============================================
+async function renderUserDashboard() {
+  if (!AppState.currentUser) return;
+
+  const nickEl = document.getElementById('dashNick');
+  const nameEl = document.getElementById('dashFullName');
+  const avatarEl = document.getElementById('dashAvatar');
+  const dateEl = document.getElementById('dashDate');
+
+  if (nickEl) nickEl.textContent = AppState.currentUser.nickname || 'เจ้าหน้าที่';
+  if (nameEl) nameEl.textContent = AppState.currentUser.fullName || '-';
+  if (avatarEl && AppState.currentUser.imageLH3) avatarEl.src = AppState.currentUser.imageLH3;
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
+
+  try {
+    const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
+    if (!data.success) return;
+
+    const si = document.getElementById('dashStatIn');
+    const so = document.getElementById('dashStatHours');
+    if (si) si.textContent = data.totalCheckIn || 0;
+    if (so) so.textContent = data.totalCheckOut || 0;
+
+    const lastLog = data.recentLogs && data.recentLogs.length > 0 ? data.recentLogs[0] : null;
+    AppState.latestLog = lastLog;
+    renderActionArea(lastLog);
+    renderDashboardRecent(data.recentLogs);
+  } catch (e) { console.error('Dashboard error:', e); }
+}
+
+function renderActionArea(lastLog) {
+  const c = document.getElementById('dashActionArea');
+  if (!c) return;
+  const isIn = lastLog && lastLog.type === 'Check-in';
+
+  if (isIn) {
+    const t = lastLog.timestamp ? lastLog.timestamp.split(' ')[1] : '';
+    const locIcon = lastLog.locationStatus === 'at_home' ? '🏠' : lastLog.locationStatus === 'outside' ? '⚠️' : '📍';
+    c.innerHTML = `
+      <div class="status-badge status-online">
+        <div class="pulse-dot"></div>
+        <div style="flex:1">
+          <div class="status-title">กำลังทำงานที่บ้าน ${locIcon}</div>
+          <div class="status-sub">เข้างานเมื่อ ${escHtml(t)} น.</div>
+        </div>
+      </div>
+      <button onclick="handleCheckIn()" class="action-btn action-btn-out">
+        <div class="action-btn-icon"><i class="fi fi-rr-sign-out-alt"></i></div>
+        <div class="action-btn-title">ลงเวลาออกงาน</div>
+        <div class="action-btn-sub">สิ้นสุดการทำงาน</div>
+      </button>`;
+  } else {
+    c.innerHTML = `
+      <button onclick="handleCheckIn()" class="action-btn action-btn-in">
+        <div class="action-btn-icon"><i class="fi fi-sr-fingerprint"></i></div>
+        <div class="action-btn-title">ลงเวลาเข้างาน</div>
+        <div class="action-btn-sub">เริ่มทำงานที่บ้าน</div>
+      </button>`;
+  }
+}
+
+function renderDashboardRecent(logs) {
+  const el = document.getElementById('dashRecentList');
+  if (!el) return;
+  if (!logs || !logs.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fi fi-rr-calendar-clock"></i><span>ยังไม่มีประวัติ</span></div>';
+    return;
+  }
+  el.innerHTML = logs.slice(0, 5).map((l, i) => {
+    const isIn = l.type === 'Check-in';
+    const icon = isIn ? 'fi-sr-shield-check' : 'fi-rr-sign-out-alt';
+    const color = isIn ? 'var(--success)' : 'var(--danger)';
+    const bg = isIn ? 'var(--success-bg)' : 'var(--danger-bg)';
+    const locBadge = l.locationStatus === 'at_home' ? '<span class="loc-badge home">🏠 บ้าน</span>'
+      : l.locationStatus === 'outside' ? '<span class="loc-badge away">⚠️ นอกพื้นที่</span>' : '';
+    return `
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:${bg};color:${color}"><i class="fi ${icon}"></i></div>
+        <div class="timeline-content">
+          <div class="timeline-header">
+            <span class="timeline-type">${isIn ? 'เข้างาน' : 'ออกงาน'} ${locBadge}</span>
+            <span class="timeline-time" style="color:${color}">${escHtml(l.timestamp?.split(' ')[1] || '')} น.</span>
+          </div>
+          <div class="timeline-date">${escHtml(l.timestamp?.split(' ')[0] || '')}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================
+// USER STATS
+// ============================================
+async function loadUserStats() {
+  try {
+    const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
+    if (!data.success) return;
+
+    const si = document.getElementById('statInTotal');
+    const so = document.getElementById('statOutTotal');
+    if (si) si.textContent = data.totalCheckIn || 0;
+    if (so) so.textContent = data.totalCheckOut || 0;
+
+    // Chart
+    if (typeof Chart !== 'undefined' && data.chartLabels) {
+      const ctx = document.getElementById('statsChart')?.getContext('2d');
+      if (ctx) {
+        if (window._statsChart) window._statsChart.destroy();
+        window._statsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.chartLabels,
+            datasets: [
+              { label: 'เข้างาน', data: data.chartDataIn, backgroundColor: '#0ea5e9', borderRadius: 6 },
+              { label: 'ออกงาน', data: data.chartDataOut, backgroundColor: '#f43f5e', borderRadius: 6 }
+            ]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+      }
+    }
+
+    // History
+    const listEl = document.getElementById('myStatsList');
+    if (listEl && data.recentLogs) {
+      listEl.innerHTML = data.recentLogs.map(l => {
+        const isIn = l.type === 'Check-in';
+        return `<div class="stat-log-item">
+          <div class="stat-log-icon ${isIn ? 'in' : 'out'}"><i class="fi ${isIn ? 'fi-rr-sign-in-alt' : 'fi-rr-sign-out-alt'}"></i></div>
+          <div class="stat-log-info">
+            <div class="stat-log-type">${escHtml(l.type)}</div>
+            <div class="stat-log-time">${escHtml(l.timestamp)}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch (e) { console.error('Stats error:', e); }
+}
+
+// ============================================
+// ADMIN STATS
+// ============================================
+async function loadAdminStats() {
+  try {
+    const res = await API.call('getAllStats', {}, 'GET');
+    if (!res.success) return;
+    const stats = res.stats || [];
+
+    let totalIn = 0, totalOut = 0;
+    stats.forEach(s => { totalIn += s.checkIn; totalOut += s.checkOut; });
+
+    const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setVal('indvTotalIn', totalIn);
+    setVal('indvTotalOut', totalOut);
+    setVal('indvTotalMembers', stats.length);
+
+    const tbody = document.getElementById('indvTableBody');
+    if (tbody) {
+      tbody.innerHTML = stats.map((s, i) => `
+        <tr>
+          <td style="text-align:center">${i + 1}</td>
+          <td><div style="display:flex;align-items:center;gap:8px">
+            <img src="${s.image || ''}" style="width:30px;height:30px;border-radius:8px;object-fit:cover" onerror="this.style.display='none'">
+            <div><div style="font-weight:600">${escHtml(s.fullName)}</div><div style="font-size:0.72rem;color:#94a3b8">${escHtml(s.department || '')}</div></div>
+          </div></td>
+          <td>${escHtml(s.department || '-')}</td>
+          <td style="text-align:center;color:var(--success);font-weight:700">${s.checkIn}</td>
+          <td style="text-align:center;color:var(--danger);font-weight:700">${s.checkOut}</td>
+          <td style="text-align:center;font-weight:700">${s.checkIn + s.checkOut}</td>
+          <td style="font-size:0.78rem">${escHtml(s.lastIn || '-')}</td>
+          <td style="font-size:0.78rem">${escHtml(s.lastOut || '-')}</td>
+        </tr>`).join('');
+    }
+  } catch (e) { console.error('Admin stats error:', e); }
+}
+
+// ============================================
+// MEMBER LIST (Admin)
+// ============================================
+function renderMemberList() {
+  const el = document.getElementById('memberList');
+  if (!el) return;
+  const members = AppState.membersCache;
+  const badge = document.getElementById('memberCountBadge');
+  if (badge) badge.textContent = members.length + ' คน';
+
+  el.innerHTML = '<div class="member-card-grid">' + members.map((m, i) => `
+    <div class="member-item">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+        <div style="flex:1;min-width:0">
+          <h4 class="member-name">${escHtml(m.fullName)} ${m.role === 'admin' ? '<span class="admin-badge">ADMIN</span>' : ''}</h4>
+          <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
+        </div>
+      </div>
+      <div class="member-footer">
+        <span class="member-username"><i class="fi fi-rr-at"></i>${escHtml(m.username)}</span>
+        ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span>' : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+// ============================================
+// HOME LOCATION
+// ============================================
+async function openSetHomeLocation() {
+  const r = await Swal.fire({
+    title: '📍 ตั้งพิกัดบ้าน',
+    html: 'ระบบจะใช้ตำแหน่งปัจจุบันเป็นพิกัดบ้านของคุณ<br>ใช้สำหรับตรวจสอบว่าทำงานที่บ้านจริง',
+    icon: 'info', showCancelButton: true, confirmButtonText: 'ตั้งพิกัดเลย', cancelButtonText: 'ยกเลิก'
+  });
+  if (!r.isConfirmed) return;
+
+  showLoading(true);
+  try {
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+    });
+    const res = await API.call('saveHomeLocation', {
+      id: AppState.currentUser.id,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      radius: 200
+    });
+    showLoading(false);
+    if (res.success) {
+      AppState.currentUser.homeLat = pos.coords.latitude;
+      AppState.currentUser.homeLng = pos.coords.longitude;
+      Swal.fire({ icon: 'success', title: '🏠 บันทึกพิกัดบ้านสำเร็จ', timer: 2000, showConfirmButton: false });
+    }
+  } catch (e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', 'ไม่สามารถระบุตำแหน่งได้', 'error');
+  }
+}
+
+// ============================================
+// DAILY PLANS
+// ============================================
+async function loadDailyPlans() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await API.call('getDailyPlans', { date: today }, 'GET');
+    const el = document.getElementById('plansList');
+    if (!el) return;
+    const plans = (res.success && res.plans) ? res.plans : [];
+    if (!plans.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>ยังไม่มีแผนงานวันนี้</span></div>';
+      return;
+    }
+    el.innerHTML = plans.map(p => `
+      <div class="plan-card">
+        <div class="plan-header">
+          <span class="plan-name">${escHtml(p.fullName)}</span>
+          <span class="plan-time">${escHtml(p.timestamp)}</span>
+        </div>
+        <div class="plan-tasks">${(p.tasks || []).map(t => `<div class="plan-task-item"><i class="fi fi-rr-check-circle"></i> ${escHtml(t)}</div>`).join('')}</div>
+        ${p.note ? `<div class="plan-note">${escHtml(p.note)}</div>` : ''}
+      </div>`).join('');
+  } catch (e) { console.error('Plans error:', e); }
+}
+
+async function submitDailyPlan(e) {
+  e.preventDefault();
+  const tasksText = document.getElementById('planTasks')?.value.trim();
+  const note = document.getElementById('planNote')?.value.trim();
+  if (!tasksText) { Swal.fire('แจ้งเตือน', 'กรุณากรอกรายการงาน', 'warning'); return; }
+
+  const tasks = tasksText.split('\n').filter(t => t.trim());
+  showLoading(true);
+  try {
+    const res = await API.call('saveDailyPlan', {
+      username: AppState.currentUser.username,
+      fullName: AppState.currentUser.fullName,
+      tasks: tasks, note: note
+    });
+    showLoading(false);
+    if (res.success) {
+      closeModal('planModal');
+      showToast('บันทึกแผนงานสำเร็จ');
+      loadDailyPlans();
+    }
+  } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
+
+// ============================================
+// SETTINGS (Admin)
+// ============================================
+async function loadSettingsForm() {
+  try {
+    const res = await API.call('getConfig', {}, 'GET');
+    if (!res.success) return;
+    const cfg = res.config;
+    const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+    setVal('settingAppName', cfg.org_name || cfg.app_name);
+    setVal('settingAddress', cfg.org_address);
+    setVal('settingPhone', cfg.org_phone);
+    setVal('settingHomeRadius', cfg.home_radius || 200);
+    setVal('settingTelegramBot', cfg.telegram_bot_token);
+    setVal('settingTelegramChat', cfg.telegram_chat_id);
+  } catch (e) { }
+}
+
+async function handleSaveSettings(e) {
+  e.preventDefault();
+  showLoading(true);
+  try {
+    const cfg = AppState.configCache || {};
+    cfg.org_name = document.getElementById('settingAppName')?.value.trim();
+    cfg.app_name = cfg.org_name;
+    cfg.org_address = document.getElementById('settingAddress')?.value.trim();
+    cfg.org_phone = document.getElementById('settingPhone')?.value.trim();
+    cfg.home_radius = parseInt(document.getElementById('settingHomeRadius')?.value) || 200;
+    cfg.telegram_bot_token = document.getElementById('settingTelegramBot')?.value.trim();
+    cfg.telegram_chat_id = document.getElementById('settingTelegramChat')?.value.trim();
+
+    await API.call('saveConfig', cfg);
+    AppState.configCache = cfg;
+    applyConfig(cfg);
+    showLoading(false);
+    showToast('บันทึกการตั้งค่าสำเร็จ');
+  } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
+
+// ============================================
+// REGISTER
+// ============================================
+function openRegisterModal() { openModal('registerModal'); }
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const username = document.getElementById('regUser').value.trim();
+  if (!/^[A-Za-z0-9]+$/.test(username)) {
+    Swal.fire('Username ไม่ถูกต้อง', 'ต้องเป็นภาษาอังกฤษหรือตัวเลขเท่านั้น', 'warning');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const payload = {
+      fullName: document.getElementById('regName').value,
+      nickname: document.getElementById('regNick').value,
+      department: document.getElementById('regDept').value,
+      phone: document.getElementById('regPhone').value,
+      username: username,
+      password: document.getElementById('regPass').value
+    };
+    const res = await API.call('register', payload);
+    showLoading(false);
+    if (res.success) {
+      closeModal('registerModal');
+      if (AppState.currentUser) {
+        loadMembers();
+        showToast('เพิ่มสมาชิกสำเร็จ');
+      } else {
+        // Auto login
+        const lr = await API.call('login', { username: payload.username, password: payload.password });
+        if (lr.success) await finalizeLogin(lr.profile, payload.username, payload.password);
+      }
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
+
+function openForgotModal() { openModal('forgotModal'); }
+
+async function handleForgotSubmit(e) {
+  e.preventDefault();
+  showLoading(true);
+  try {
+    const res = await API.call('resetPassword', {
+      username: document.getElementById('forgotUser').value,
+      phone: document.getElementById('forgotPhone').value,
+      newPass: document.getElementById('forgotNewPass').value
+    });
+    showLoading(false);
+    if (res.success) { closeModal('forgotModal'); showToast('เปลี่ยนรหัสผ่านสำเร็จ'); }
+    else Swal.fire('ผิดพลาด', res.message, 'error');
+  } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
