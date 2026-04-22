@@ -812,7 +812,7 @@ async function printUserReport(username) {
       </style></head>
       <body onload="window.print();">
         <h2>รายงานการลงเวลา WFH</h2>
-        <p><strong>ชื่อผู้ใช้:</strong> ${uName}</p>
+        <p><strong>ชื่อ-สกุล:</strong> ${escHtml(res.fullName || username)}</p>
         <p><strong>เวลาทำงานรวม:</strong> ${escHtml(res.totalWorkingTime || '0 นาที')}</p>
         <p><strong>จำนวนครั้งเข้างาน:</strong> ${res.totalCheckIn}</p>
         <p><strong>จำนวนครั้งออกงาน:</strong> ${res.totalCheckOut}</p>
