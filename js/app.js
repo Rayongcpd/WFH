@@ -178,11 +178,13 @@ function applyConfig(cfg) {
   if (cfg.org_logo) {
     const sidebarIcon = document.getElementById('sidebarBrandIcon');
     if (sidebarIcon) {
-      sidebarIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
+      sidebarIcon.style.background = 'transparent';
+      sidebarIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.style.background='';this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
     }
     const loginIcon = document.getElementById('loginLogo');
     if (loginIcon) {
-      loginIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
+      loginIcon.style.background = 'transparent';
+      loginIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.style.background='';this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
     }
   }
 }
