@@ -13,7 +13,8 @@ const AppState = {
   configCache: null,
   latestLog: null,
   currentPage: 1,
-  itemsPerPage: 20
+  itemsPerPage: 20,
+  role: 'member'
 };
 
 // ============================================
@@ -129,7 +130,8 @@ async function handleLogin(e) {
 
 async function finalizeLogin(profile, username, password) {
   AppState.currentUser = profile || {};
-  AppState.isAdmin = (profile.role || '').toLowerCase() === 'admin';
+  AppState.role = (profile.role || '').toLowerCase();
+  AppState.isAdmin = ['admin', 'subadmin'].includes(AppState.role);
 
   try {
     const res = await API.call('getConfig', {}, 'GET');
@@ -250,7 +252,7 @@ function menuItem(tab, icon, label) {
 function updateSidebarUser() {
   if (!AppState.currentUser) return;
   const n = AppState.currentUser.nickname || AppState.currentUser.fullName || '-';
-  const r = AppState.isAdmin ? 'Administrator' : 'เจ้าหน้าที่';
+  const r = AppState.role === 'admin' ? 'Administrator' : AppState.role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่';
   const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   el('sidebarUserName', n); el('sidebarUserRole', r);
   el('adminWelcomeName', n);

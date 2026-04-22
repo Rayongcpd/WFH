@@ -321,14 +321,33 @@ function renderMemberList() {
   const badge = document.getElementById('memberCountBadge');
   if (badge) badge.textContent = members.length + ' คน';
 
-  el.innerHTML = '<div class="member-card-grid">' + members.map((m, i) => `
+  el.innerHTML = '<div class="member-card-grid">' + members.map((m, i) => {
+    let roleBadge = '';
+    if (m.role === 'admin') roleBadge = '<span class="admin-badge">ADMIN</span>';
+    else if (m.role === 'subadmin') roleBadge = '<span class="admin-badge" style="background:#f59e0b;color:#fff;">SUB-ADMIN</span>';
+
+    let roleBtn = '';
+    if (AppState.role === 'admin' && m.username !== AppState.currentUser.username && m.username !== 'admin') {
+      if (m.role === 'subadmin') {
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ลดสถานะเป็นเจ้าหน้าที่">ลดสถานะ</button>`;
+      } else if (m.role !== 'admin') {
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ตั้งเป็น Sub-Admin">ให้สิทธิ์ Sub-Admin</button>`;
+      }
+    }
+
+    let resetBtn = '';
+    if (m.homeLat && AppState.role === 'admin') {
+      resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
+    }
+
+    return `
     <div class="member-item">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div style="flex:1;min-width:0">
           <h4 class="member-name">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${m.isWorking ? 'var(--success)' : 'var(--danger)'};margin-right:6px;box-shadow:0 0 0 2px ${m.isWorking ? 'var(--success-bg)' : 'var(--danger-bg)'}" title="${m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว'}"></span>
-            ${escHtml(m.fullName)} ${m.role === 'admin' ? '<span class="admin-badge">ADMIN</span>' : ''}
+            ${escHtml(m.fullName)} ${roleBadge}
           </h4>
           <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
         </div>
@@ -336,10 +355,12 @@ function renderMemberList() {
       <div class="member-footer" style="display:flex; justify-content:space-between; align-items:center;">
         <span class="member-username"><i class="fi fi-rr-at"></i>${escHtml(m.username)}</span>
         <div style="display:flex; align-items:center; gap:8px;">
-          ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span><button onclick="resetMemberHomeLocation(\'' + m.id + '\', \'' + m.fullName.replace(/'/g, "\\'") + '\')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>' : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
+          ${roleBtn}
+          ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span>' + resetBtn : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
         </div>
       </div>
-    </div>`).join('') + '</div>';
+    </div>`;
+  }).join('') + '</div>';
 }
 
 async function resetMemberHomeLocation(id, name) {
@@ -351,10 +372,34 @@ async function resetMemberHomeLocation(id, name) {
   if (!r.isConfirmed) return;
   showLoading(true);
   try {
-    const res = await API.call('resetHomeLocation', { id: id });
+    const res = await API.call('resetHomeLocation', { id: id, adminUsername: AppState.currentUser.username });
     showLoading(false);
     if (res.success) {
       showToast('รีเซ็ตพิกัดสำเร็จ');
+      loadMembers();
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function toggleMemberRole(id, role, name) {
+  const roleName = role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่ปกติ';
+  const r = await Swal.fire({
+    title: 'ยืนยันการปรับสถานะ?',
+    html: `คุณต้องการเปลี่ยนสถานะของ <b>${escHtml(name)}</b> เป็น <b>${roleName}</b> ใช่หรือไม่?`,
+    icon: 'question', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#0ea5e9'
+  });
+  if (!r.isConfirmed) return;
+  showLoading(true);
+  try {
+    const res = await API.call('updateRole', { id: id, role: role, adminUsername: AppState.currentUser.username });
+    showLoading(false);
+    if (res.success) {
+      showToast('ปรับสถานะสำเร็จ');
       loadMembers();
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
