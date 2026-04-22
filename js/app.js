@@ -173,6 +173,18 @@ function applyConfig(cfg) {
   document.querySelectorAll('[data-app-name]').forEach(el => el.textContent = name);
   const descEl = document.getElementById('loginAppDesc');
   if (descEl) descEl.textContent = cfg.org_address || 'ระบบลงเวลาทำงานที่บ้าน';
+
+  // Apply org logo
+  if (cfg.org_logo) {
+    const sidebarIcon = document.getElementById('sidebarBrandIcon');
+    if (sidebarIcon) {
+      sidebarIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
+    }
+    const loginIcon = document.getElementById('loginLogo');
+    if (loginIcon) {
+      loginIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
+    }
+  }
 }
 
 // ============================================

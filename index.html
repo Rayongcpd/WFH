@@ -37,7 +37,7 @@
 <!-- ====== LOGIN ====== -->
 <div id="loginScreen" style="display:none;">
   <div class="login-card">
-    <div class="login-logo"><i class="fi fi-sr-home"></i></div>
+    <div class="login-logo" id="loginLogo"><i class="fi fi-sr-home"></i></div>
     <h2 class="login-title" data-app-name>WFH System</h2>
     <p class="login-sub" id="loginAppDesc">ระบบลงเวลาทำงานที่บ้าน</p>
     <form onsubmit="handleLogin(event)">
@@ -74,7 +74,7 @@
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-brand">
-        <div class="sidebar-brand-icon"><i class="fi fi-sr-home"></i></div>
+        <div class="sidebar-brand-icon" id="sidebarBrandIcon"><i class="fi fi-sr-home"></i></div>
         <div><h1 data-app-name>WFH System</h1><p>Work From Home</p></div>
       </div>
       <div class="sidebar-user">
@@ -268,6 +268,18 @@
             <div class="card" style="margin-bottom:16px">
               <div class="card-header"><h3><i class="fi fi-rr-building" style="color:var(--primary)"></i> ข้อมูลองค์กร</h3></div>
               <div class="card-body">
+                <div class="form-group">
+                  <label>โลโก้สำนักงาน</label>
+                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                    <div id="settingLogoPreview" style="width:56px;height:56px;border-radius:14px;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border);flex-shrink:0;">
+                      <i class="fi fi-sr-home" style="font-size:20px;color:var(--primary)"></i>
+                    </div>
+                    <div style="flex:1">
+                      <input type="file" id="settingLogoFile" class="form-input" accept="image/jpeg, image/png, image/webp" onchange="previewSettingLogo(this)" style="font-size:0.82rem;">
+                      <p style="font-size:0.72rem;color:var(--light-gray);margin-top:4px;">รองรับ JPG, PNG, WebP (สูงสุด 2MB)</p>
+                    </div>
+                  </div>
+                </div>
                 <div class="form-group"><label>ชื่อองค์กร / หน่วยงาน</label><input type="text" id="settingAppName" class="form-input" placeholder="ชื่อหน่วยงาน"></div>
                 <div class="form-group"><label>ที่อยู่</label><input type="text" id="settingAddress" class="form-input" placeholder="ที่อยู่"></div>
                 <div class="form-group"><label>เบอร์โทร</label><input type="text" id="settingPhone" class="form-input" placeholder="0XX-XXXXXXX"></div>

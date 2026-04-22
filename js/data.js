@@ -476,6 +476,12 @@ async function loadSettingsForm() {
     setVal('settingHomeRadius', cfg.home_radius || 200);
     setVal('settingTelegramBot', cfg.telegram_bot_token);
     setVal('settingTelegramChat', cfg.telegram_chat_id);
+
+    // Show existing logo
+    const logoPreview = document.getElementById('settingLogoPreview');
+    if (logoPreview && cfg.org_logo) {
+      logoPreview.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home style=font-size:20px;color:var(--primary)></i>'">`;
+    }
   } catch (e) { }
 }
 
@@ -483,6 +489,28 @@ async function handleSaveSettings(e) {
   e.preventDefault();
   showLoading(true);
   try {
+    // Upload logo if selected
+    const logoInput = document.getElementById('settingLogoFile');
+    if (logoInput && logoInput.files && logoInput.files[0]) {
+      const file = logoInput.files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        showLoading(false);
+        Swal.fire('ขนาดไฟล์ใหญ่เกินไป', 'กรุณาเลือกรูปขนาดไม่เกิน 2MB', 'warning');
+        return;
+      }
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+      const logoRes = await API.call('uploadLogo', { image: { dataUrl: dataUrl, name: file.name } });
+      if (logoRes.success && logoRes.logoUrl) {
+        const cfg = AppState.configCache || {};
+        cfg.org_logo = logoRes.logoUrl;
+        AppState.configCache = cfg;
+      }
+    }
+
     const cfg = AppState.configCache || {};
     cfg.org_name = document.getElementById('settingAppName')?.value.trim();
     cfg.app_name = cfg.org_name;
@@ -498,6 +526,25 @@ async function handleSaveSettings(e) {
     showLoading(false);
     showToast('บันทึกการตั้งค่าสำเร็จ');
   } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+}
+
+function previewSettingLogo(input) {
+  const preview = document.getElementById('settingLogoPreview');
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      Swal.fire('ขนาดไฟล์ใหญ่เกินไป', 'กรุณาเลือกรูปขนาดไม่เกิน 2MB', 'warning');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (preview) {
+        preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 // ============================================
