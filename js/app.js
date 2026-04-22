@@ -17,6 +17,30 @@ const AppState = {
 };
 
 // ============================================
+// THEME
+// ============================================
+function initTheme() {
+  const savedTheme = localStorage.getItem('wfh_theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    icon.className = savedTheme === 'dark' ? 'fi fi-rr-sun' : 'fi fi-rr-moon';
+  }
+}
+
+function toggleTheme() {
+  const current = document.body.getAttribute('data-theme') || 'light';
+  const newTheme = current === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', newTheme);
+  localStorage.setItem('wfh_theme', newTheme);
+  
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    icon.className = newTheme === 'dark' ? 'fi fi-rr-sun' : 'fi fi-rr-moon';
+  }
+}
+
+// ============================================
 // UTILITIES
 // ============================================
 function escHtml(s) {
@@ -297,6 +321,9 @@ async function loadAdminDashboard() {
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Theme
+  initTheme();
+
   // Check API URL
   if (!API.getUrl()) {
     document.getElementById('apiSetupScreen').style.display = 'flex';
