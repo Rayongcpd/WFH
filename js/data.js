@@ -91,6 +91,22 @@ async function renderUserDashboard() {
   if (avatarEl && AppState.currentUser.imageLH3) avatarEl.src = AppState.currentUser.imageLH3;
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
 
+  const hc = document.getElementById('homeLocationContainer');
+  if (hc) {
+    if (AppState.currentUser.homeLat) {
+      hc.innerHTML = `<div style="padding:10px 16px; border-radius:12px; background:var(--success-bg); border:1px dashed var(--success); display:inline-block; text-align:center;">
+        <div style="font-size:0.85rem; font-weight:700; color:var(--success); display:flex; align-items:center; justify-content:center; gap:6px;">
+          <i class="fi fi-rr-map-marker-home"></i> ตั้งค่าพิกัดบ้านเรียบร้อยแล้ว
+        </div>
+        <div style="font-size:0.75rem; color:var(--gray); margin-top:4px;">หากต้องการเปลี่ยนแปลงพิกัดใหม่ กรุณาติดต่อ Admin</div>
+      </div>`;
+    } else {
+      hc.innerHTML = `<button onclick="openSetHomeLocation()" style="background:var(--primary-bg);border:1.5px solid #bae6fd;padding:10px 20px;border-radius:12px;color:var(--primary);font-weight:700;font-size:0.82rem;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px">
+        <i class="fi fi-rr-map-marker-home"></i> ตั้งค่าพิกัดบ้าน
+      </button>`;
+    }
+  }
+
   try {
     const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
     if (!data.success) return;
@@ -271,17 +287,46 @@ function renderMemberList() {
           <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
         </div>
       </div>
-      <div class="member-footer">
+      <div class="member-footer" style="display:flex; justify-content:space-between; align-items:center;">
         <span class="member-username"><i class="fi fi-rr-at"></i>${escHtml(m.username)}</span>
-        ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span>' : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span><button onclick="resetMemberHomeLocation(\'' + m.id + '\', \'' + m.fullName.replace(/'/g, "\\'") + '\')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>' : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
+        </div>
       </div>
     </div>`).join('') + '</div>';
+}
+
+async function resetMemberHomeLocation(id, name) {
+  const r = await Swal.fire({
+    title: 'ยืนยันการรีเซ็ตพิกัด?',
+    html: `คุณต้องการรีเซ็ตพิกัดบ้านของ <b>${escHtml(name)}</b> ใช่หรือไม่?<br><span style="font-size:0.85rem;color:var(--gray)">หลังจากรีเซ็ต เจ้าหน้าที่จะสามารถตั้งพิกัดใหม่ด้วยตัวเองได้อีกครั้ง</span>`,
+    icon: 'warning', showCancelButton: true, confirmButtonText: 'รีเซ็ตพิกัด', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ef4444'
+  });
+  if (!r.isConfirmed) return;
+  showLoading(true);
+  try {
+    const res = await API.call('resetHomeLocation', { id: id });
+    showLoading(false);
+    if (res.success) {
+      showToast('รีเซ็ตพิกัดสำเร็จ');
+      loadMembers();
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
 }
 
 // ============================================
 // HOME LOCATION
 // ============================================
 async function openSetHomeLocation() {
+  if (AppState.currentUser.homeLat) {
+    Swal.fire('แจ้งเตือน', 'คุณได้ตั้งพิกัดบ้านไปแล้ว หากต้องการเปลี่ยนแปลงกรุณาติดต่อ Admin', 'warning');
+    return;
+  }
   const r = await Swal.fire({
     title: '📍 ตั้งพิกัดบ้าน',
     html: 'ระบบจะใช้ตำแหน่งปัจจุบันเป็นพิกัดบ้านของคุณ<br>ใช้สำหรับตรวจสอบว่าทำงานที่บ้านจริง',
@@ -305,6 +350,7 @@ async function openSetHomeLocation() {
       AppState.currentUser.homeLat = pos.coords.latitude;
       AppState.currentUser.homeLng = pos.coords.longitude;
       Swal.fire({ icon: 'success', title: '🏠 บันทึกพิกัดบ้านสำเร็จ', timer: 2000, showConfirmButton: false });
+      renderUserDashboard();
     }
   } catch (e) {
     showLoading(false);
