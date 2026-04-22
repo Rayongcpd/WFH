@@ -319,14 +319,17 @@ async function loadAdminDashboard() {
     const res = await API.call('getTodayStats', {}, 'GET');
     if (res.success) {
       const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-      setVal('execTotal', AppState.membersCache.length);
+      const validMembers = AppState.membersCache.filter(m => m.role !== 'admin' && m.role !== 'subadmin');
+      const validCount = validMembers.length;
+
+      setVal('execTotal', validCount);
       setVal('execOnDuty', res.activeCount || 0);
-      setVal('execOffDuty', (AppState.membersCache.length - (res.activeCount || 0)));
+      setVal('execOffDuty', (validCount - (res.activeCount || 0)));
       // Duty bar
-      const pct = AppState.membersCache.length > 0 ? Math.round((res.activeCount / AppState.membersCache.length) * 100) : 0;
+      const pct = validCount > 0 ? Math.round((res.activeCount / validCount) * 100) : 0;
       setVal('dutyPercent', pct + '%');
       setVal('dutyOnCount', res.activeCount || 0);
-      setVal('dutyOffCount', AppState.membersCache.length - (res.activeCount || 0));
+      setVal('dutyOffCount', validCount - (res.activeCount || 0));
       const bar = document.getElementById('dutyProgressFill');
       if (bar) bar.style.width = pct + '%';
     }
