@@ -58,7 +58,7 @@
     </form>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button onclick="openRegisterModal()" class="btn-outline" style="flex:1">
-        <i class="fi fi-rr-user-add" style="margin-right:4px"></i> สมัครสมาชิก
+        <i class="fi fi-rr-user-add" style="margin-right:4px"></i> ลงทะเบียนสมาชิก
       </button>
       <button onclick="openForgotModal()" class="btn-outline" style="flex:1">
         <i class="fi fi-rr-key" style="margin-right:4px"></i> ลืมรหัสผ่าน
@@ -304,7 +304,7 @@
 <!-- Register Modal -->
 <div id="registerModal" class="modal-overlay" onclick="if(event.target===this)closeModal('registerModal')">
   <div class="modal-card">
-    <div class="modal-header"><h3><i class="fi fi-rr-user-add" style="margin-right:8px"></i> สมัครสมาชิก</h3><button class="modal-close" onclick="closeModal('registerModal')"><i class="fi fi-rr-cross-small"></i></button></div>
+    <div class="modal-header"><h3><i class="fi fi-rr-user-add" style="margin-right:8px"></i> ลงทะเบียนสมาชิก</h3><button class="modal-close" onclick="closeModal('registerModal')"><i class="fi fi-rr-cross-small"></i></button></div>
     <div class="modal-body">
       <form onsubmit="handleRegister(event)">
         <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="regName" class="form-input" required></div>
@@ -313,7 +313,7 @@
         <div class="form-group"><label>เบอร์โทร</label><input type="text" id="regPhone" class="form-input"></div>
         <div class="form-group"><label>ชื่อผู้ใช้ (ภาษาอังกฤษ) *</label><input type="text" id="regUser" class="form-input" required pattern="[A-Za-z0-9]+"></div>
         <div class="form-group"><label>รหัสผ่าน *</label><input type="password" id="regPass" class="form-input" required></div>
-        <button type="submit" class="btn-primary"><i class="fi fi-rr-check" style="margin-right:6px"></i> สมัครสมาชิก</button>
+        <button type="submit" class="btn-primary"><i class="fi fi-rr-check" style="margin-right:6px"></i> ลงทะเบียนสมาชิก</button>
       </form>
     </div>
   </div>
