@@ -557,3 +557,112 @@ async function handleForgotSubmit(e) {
     else Swal.fire('ผิดพลาด', res.message, 'error');
   } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
 }
+
+// ============================================
+// PROFILE MANAGEMENT
+// ============================================
+function openProfileModal() {
+  if (!AppState.currentUser) return;
+  const u = AppState.currentUser;
+  document.getElementById('profName').value = u.fullName || '';
+  document.getElementById('profNick').value = u.nickname || '';
+  document.getElementById('profDept').value = u.department || '';
+  document.getElementById('profPhone').value = u.phone || '';
+  document.getElementById('profImage').value = '';
+  
+  const preview = document.getElementById('profPreview');
+  if (u.imageLH3) {
+    preview.src = u.imageLH3;
+    preview.style.display = 'inline-block';
+  } else {
+    preview.style.display = 'none';
+  }
+  
+  openModal('profileModal');
+}
+
+function previewProfileImage(input) {
+  const preview = document.getElementById('profPreview');
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire('ขนาดไฟล์ใหญ่เกินไป', 'กรุณาเลือกรูปภาพขนาดไม่เกิน 5MB', 'warning');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'inline-block';
+    }
+    reader.readAsDataURL(file);
+  }
+}
+
+async function handleUpdateProfile(e) {
+  e.preventDefault();
+  const u = AppState.currentUser;
+  if (!u) return;
+  
+  const fileInput = document.getElementById('profImage');
+  let imagePayload = null;
+  
+  showLoading(true);
+  
+  if (fileInput.files && fileInput.files[0]) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = async function(ev) {
+      imagePayload = { dataUrl: ev.target.result, name: file.name };
+      await submitProfileUpdate(imagePayload);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    await submitProfileUpdate(null);
+  }
+}
+
+async function submitProfileUpdate(imagePayload) {
+  const payload = {
+    id: AppState.currentUser.id,
+    fullName: document.getElementById('profName').value.trim(),
+    nickname: document.getElementById('profNick').value.trim(),
+    department: document.getElementById('profDept').value.trim(),
+    phone: document.getElementById('profPhone').value.trim()
+  };
+  if (imagePayload) {
+    payload.image = imagePayload;
+  }
+  
+  try {
+    const res = await API.call('updateMember', payload);
+    showLoading(false);
+    if (res.success) {
+      closeModal('profileModal');
+      showToast('อัปเดตโปรไฟล์สำเร็จ');
+      
+      // Update local state temporarily
+      AppState.currentUser.fullName = payload.fullName;
+      AppState.currentUser.nickname = payload.nickname;
+      AppState.currentUser.department = payload.department;
+      AppState.currentUser.phone = payload.phone;
+      if (imagePayload) {
+        AppState.currentUser.imageLH3 = imagePayload.dataUrl;
+      }
+      
+      updateSidebarUser();
+      const userDash = document.getElementById('viewUserDashboard');
+      if (userDash && userDash.classList.contains('active')) {
+        renderUserDashboard();
+      }
+      if (AppState.isAdmin) {
+        loadMembers();
+      }
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (err) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', err.message, 'error');
+  }
+}

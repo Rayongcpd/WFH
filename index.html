@@ -77,8 +77,11 @@
         <div><h1 data-app-name>WFH System</h1><p>Work From Home</p></div>
       </div>
       <div class="sidebar-user">
-        <img id="sidebarAvatar" src="" onerror="this.style.display='none'" alt="">
-        <div><div class="sidebar-user-name" id="sidebarUserName">-</div><div class="sidebar-user-role" id="sidebarUserRole">-</div></div>
+        <div style="position:relative;cursor:pointer;" onclick="openProfileModal()" title="แก้ไขโปรไฟล์">
+          <img id="sidebarAvatar" src="" onerror="this.style.display='none'" alt="" style="width:48px;height:48px;border-radius:14px;object-fit:cover;">
+          <div style="position:absolute;bottom:-4px;right:-4px;background:var(--primary);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--bg);"><i class="fi fi-rr-pen-clip"></i></div>
+        </div>
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openProfileModal()"><div class="sidebar-user-name" id="sidebarUserName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">-</div><div class="sidebar-user-role" id="sidebarUserRole">-</div></div>
       </div>
       <nav class="sidebar-nav" id="sidebarMenu"></nav>
       <div class="sidebar-footer">
@@ -149,7 +152,10 @@
         <!-- ====== USER DASHBOARD ====== -->
         <section id="viewUserDashboard" class="view-section">
           <div style="text-align:center;margin-bottom:20px">
-            <img id="dashAvatar" src="" style="width:72px;height:72px;border-radius:20px;object-fit:cover;border:3px solid var(--border);margin-bottom:8px" onerror="this.style.display='none'">
+            <div style="position:relative;display:inline-block;cursor:pointer;" onclick="openProfileModal()" title="แก้ไขโปรไฟล์">
+              <img id="dashAvatar" src="" style="width:72px;height:72px;border-radius:20px;object-fit:cover;border:3px solid var(--border);margin-bottom:8px" onerror="this.style.display='none'">
+              <div style="position:absolute;bottom:8px;right:-8px;background:var(--primary);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.2);"><i class="fi fi-rr-pen-clip" style="font-size:12px;"></i></div>
+            </div>
             <h2 style="font-weight:800;font-size:1.2rem" id="dashNick">เจ้าหน้าที่</h2>
             <p style="color:var(--gray);font-size:0.82rem" id="dashFullName">-</p>
             <p style="color:var(--light-gray);font-size:0.78rem" id="dashDate"></p>
@@ -340,6 +346,29 @@
         </div>
         <div class="form-group"><label>หมายเหตุ</label><input type="text" id="planNote" class="form-input" placeholder="หมายเหตุเพิ่มเติม"></div>
         <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,var(--secondary),#0d9488)"><i class="fi fi-rr-check" style="margin-right:6px"></i> บันทึกแผนงาน</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profileModal" class="modal-overlay" onclick="if(event.target===this)closeModal('profileModal')">
+  <div class="modal-card">
+    <div class="modal-header"><h3><i class="fi fi-rr-user-pen" style="margin-right:8px"></i> แก้ไขโปรไฟล์</h3><button class="modal-close" onclick="closeModal('profileModal')"><i class="fi fi-rr-cross-small"></i></button></div>
+    <div class="modal-body">
+      <form onsubmit="handleUpdateProfile(event)">
+        <div style="text-align:center; margin-bottom:16px;">
+          <img id="profPreview" src="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-bottom:8px;display:none;">
+          <div class="form-group" style="text-align:left;">
+            <label>เปลี่ยนรูปภาพโปรไฟล์ (สูงสุด 5MB)</label>
+            <input type="file" id="profImage" class="form-input" accept="image/jpeg, image/png, image/webp" onchange="previewProfileImage(this)">
+          </div>
+        </div>
+        <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="profName" class="form-input" required></div>
+        <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="profNick" class="form-input"></div>
+        <div class="form-group"><label>แผนก / ส่วนงาน</label><input type="text" id="profDept" class="form-input"></div>
+        <div class="form-group"><label>เบอร์โทร</label><input type="text" id="profPhone" class="form-input"></div>
+        <button type="submit" class="btn-primary"><i class="fi fi-rr-disk" style="margin-right:6px"></i> บันทึกโปรไฟล์</button>
       </form>
     </div>
   </div>
