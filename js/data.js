@@ -31,6 +31,13 @@ async function performGPSAction(type) {
       });
     });
 
+    // Mock GPS Detection
+    if (pos.coords.accuracy === 0 || pos.coords.accuracy > 1500) {
+      showLoading(false);
+      Swal.fire('พิกัดผิดปกติ', 'ระบบตรวจพบความแม่นยำของ GPS ผิดปกติ (อาจเกิดจากการจำลองพิกัดหรือสัญญาณอ่อนมาก) กรุณาลองใหม่อีกครั้ง', 'warning');
+      return;
+    }
+
     const payload = {
       username: AppState.currentUser.username,
       fullName: AppState.currentUser.fullName,
@@ -214,10 +221,32 @@ async function loadUserStats() {
       }
     }
 
-    // History
-    const listEl = document.getElementById('myStatsList');
-    if (listEl && data.recentLogs) {
-      listEl.innerHTML = data.recentLogs.map(l => {
+    // History with Pagination
+    const logs = data.recentLogs || [];
+    AppState.myStatsLogs = logs;
+    AppState.myStatsPage = 1;
+    renderMyStatsPage();
+
+  } catch (e) { console.error('Stats error:', e); }
+}
+
+function renderMyStatsPage() {
+  const listEl = document.getElementById('myStatsList');
+  const pageEl = document.getElementById('myStatsPagination');
+  const logs = AppState.myStatsLogs || [];
+  const pageSize = 10;
+  const totalPages = Math.ceil(logs.length / pageSize) || 1;
+  const p = AppState.myStatsPage || 1;
+  
+  const start = (p - 1) * pageSize;
+  const end = start + pageSize;
+  const currentLogs = logs.slice(start, end);
+
+  if (listEl) {
+    if (currentLogs.length === 0) {
+      listEl.innerHTML = '<div class="empty-state"><span>ไม่มีประวัติ</span></div>';
+    } else {
+      listEl.innerHTML = currentLogs.map(l => {
         const isIn = l.type === 'Check-in';
         return `<div class="stat-log-item">
           <div class="stat-log-icon ${isIn ? 'in' : 'out'}"><i class="fi ${isIn ? 'fi-rr-sign-in-alt' : 'fi-rr-sign-out-alt'}"></i></div>
@@ -228,7 +257,19 @@ async function loadUserStats() {
         </div>`;
       }).join('');
     }
-  } catch (e) { console.error('Stats error:', e); }
+  }
+
+  if (pageEl) {
+    if (totalPages > 1) {
+      pageEl.innerHTML = `
+        <button class="btn-outline" style="padding:4px 8px;font-size:0.75rem;" onclick="AppState.myStatsPage=Math.max(1, AppState.myStatsPage-1);renderMyStatsPage()" ${p===1?'disabled':''}>ก่อนหน้า</button>
+        <span style="font-size:0.8rem;align-self:center;">หน้า ${p} / ${totalPages}</span>
+        <button class="btn-outline" style="padding:4px 8px;font-size:0.75rem;" onclick="AppState.myStatsPage=Math.min(${totalPages}, AppState.myStatsPage+1);renderMyStatsPage()" ${p===totalPages?'disabled':''}>ถัดไป</button>
+      `;
+    } else {
+      pageEl.innerHTML = '';
+    }
+  }
 }
 
 // ============================================
@@ -260,9 +301,11 @@ async function loadAdminStats() {
           <td>${escHtml(s.department || '-')}</td>
           <td style="text-align:center;color:var(--success);font-weight:700">${s.checkIn}</td>
           <td style="text-align:center;color:var(--danger);font-weight:700">${s.checkOut}</td>
-          <td style="text-align:center;font-weight:700">${s.checkIn + s.checkOut}</td>
+          <td style="text-align:center;color:#f59e0b;font-weight:700">${s.lateCount || 0}</td>
+          <td style="text-align:center;font-weight:700">${escHtml(s.totalWorkingTime || '0 นาที')}</td>
           <td style="font-size:0.78rem">${escHtml(s.lastIn || '-')}</td>
           <td style="font-size:0.78rem">${escHtml(s.lastOut || '-')}</td>
+          <td style="text-align:center"><button onclick="printUserReport('${s.username}')" style="background:var(--primary-bg);border:none;color:var(--primary);padding:4px 8px;border-radius:6px;cursor:pointer;"><i class="fi fi-rr-print"></i></button></td>
         </tr>`).join('');
     }
   } catch (e) { console.error('Admin stats error:', e); }
@@ -474,6 +517,7 @@ async function loadSettingsForm() {
     setVal('settingAddress', cfg.org_address);
     setVal('settingPhone', cfg.org_phone);
     setVal('settingHomeRadius', cfg.home_radius || 200);
+    setVal('settingLateTime', cfg.late_time || '08:30');
     setVal('settingTelegramBot', cfg.telegram_bot_token);
     setVal('settingTelegramChat', cfg.telegram_chat_id);
 
@@ -517,6 +561,7 @@ async function handleSaveSettings(e) {
     cfg.org_address = document.getElementById('settingAddress')?.value.trim();
     cfg.org_phone = document.getElementById('settingPhone')?.value.trim();
     cfg.home_radius = parseInt(document.getElementById('settingHomeRadius')?.value) || 200;
+    cfg.late_time = document.getElementById('settingLateTime')?.value || '08:30';
     cfg.telegram_bot_token = document.getElementById('settingTelegramBot')?.value.trim();
     cfg.telegram_chat_id = document.getElementById('settingTelegramChat')?.value.trim();
 
@@ -711,5 +756,78 @@ async function submitProfileUpdate(imagePayload) {
   } catch (err) {
     showLoading(false);
     Swal.fire('ผิดพลาด', err.message, 'error');
+  }
+}
+
+// ============================================
+// EXPORT & PRINT
+// ============================================
+async function exportToCSV() {
+  showLoading(true);
+  try {
+    const res = await API.call('getExportData', {}, 'GET');
+    showLoading(false);
+    if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
+    
+    let csv = '\uFEFF'; // BOM for Excel Thai support
+    csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,แผนก,เวลาทำงานรวม,มาสาย\n';
+    
+    const summary = res.dailySummary || [];
+    const userMap = res.userMap || {};
+    
+    summary.forEach((s, i) => {
+      const u = userMap[s.username] || {};
+      const lateTxt = s.isLate ? 'ใช่' : 'ไม่ใช่';
+      csv += `${i+1},${s.date},${s.username},${u.fullName || '-'},${u.department || '-'},${s.workingHoursStr},${lateTxt}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'WFH_Export_' + new Date().toISOString().split('T')[0] + '.csv';
+    link.click();
+  } catch (e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function printUserReport(username) {
+  showLoading(true);
+  try {
+    const res = await API.call('getPersonalStats', { username: username }, 'GET');
+    showLoading(false);
+    if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
+    
+    const w = window.open('', '_blank');
+    const uName = escHtml(username);
+    const html = `
+      <html><head><title>รายงาน - ${uName}</title>
+      <style>
+        body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f1f5f9; }
+      </style></head>
+      <body onload="window.print();">
+        <h2>รายงานการลงเวลา WFH</h2>
+        <p><strong>ชื่อผู้ใช้:</strong> ${uName}</p>
+        <p><strong>เวลาทำงานรวม:</strong> ${escHtml(res.totalWorkingTime || '0 นาที')}</p>
+        <p><strong>จำนวนครั้งเข้างาน:</strong> ${res.totalCheckIn}</p>
+        <p><strong>จำนวนครั้งออกงาน:</strong> ${res.totalCheckOut}</p>
+        <table>
+          <thead><tr><th>ประวัติ (ล่าสุด)</th><th>ประเภท</th><th>ตำแหน่ง</th></tr></thead>
+          <tbody>
+            ${(res.recentLogs||[]).map(l => `<tr><td>${escHtml(l.timestamp)}</td><td>${escHtml(l.type)}</td><td>${escHtml(l.locationStatus)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </body></html>
+    `;
+    w.document.write(html);
+    w.document.close();
+  } catch(e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', e.message, 'error');
   }
 }
