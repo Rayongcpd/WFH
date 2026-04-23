@@ -305,17 +305,18 @@ a { text-decoration:none; color:var(--primary); }
   transition: transform 0.25s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
-.mode-toggle input:checked + .mode-toggle-slider.ghost {
+input.mode-toggle:checked + .mode-toggle-slider.ghost {
   background: #6d28d9;
 }
-.mode-toggle input:checked + .mode-toggle-slider.echo {
+input.mode-toggle:checked + .mode-toggle-slider.echo {
   background: #b45309;
 }
-.mode-toggle input:checked + .mode-toggle-slider::before {
+input.mode-toggle:checked + .mode-toggle-slider::before {
   transform: translateX(20px);
 }
-.mode-toggle input:disabled + .mode-toggle-slider {
+input.mode-toggle:disabled + .mode-toggle-slider {
   cursor: not-allowed;
+  opacity: 0.45;
 }
 
 /* ====== ECHO TOOLTIP (Leaflet) ====== */
