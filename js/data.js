@@ -824,7 +824,7 @@ async function exportToCSV() {
     if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
     
     let csv = '\uFEFF'; // BOM for Excel Thai support
-    csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,แผนก,เวลาทำงานรวม,มาสาย\n';
+    csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,กลุ่ม,เวลาทำงานรวม,มาสาย\n';
     
     const summary = res.dailySummary || [];
     const userMap = res.userMap || {};

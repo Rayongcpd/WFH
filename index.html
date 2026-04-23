@@ -252,7 +252,7 @@
             </div>
             <div class="card-body" style="overflow-x:auto">
             <table class="indv-table"><thead><tr>
-              <th style="width:48px;text-align:center">ลำดับ</th><th>ชื่อ - นามสกุล</th><th>แผนก</th>
+              <th style="width:48px;text-align:center">ลำดับ</th><th>ชื่อ - นามสกุล</th><th>กลุ่ม</th>
               <th class="indv-th-center">เข้า</th><th class="indv-th-center">ออก</th><th class="indv-th-center">มาสาย</th>
               <th>รวมเวลาทำงาน</th><th>เข้างานล่าสุด</th><th>ออกงานล่าสุด</th><th style="text-align:center">รายงาน</th>
             </tr></thead><tbody id="indvTableBody"><tr><td colspan="10" style="text-align:center;padding:30px;color:var(--light-gray)">กำลังโหลด...</td></tr></tbody></table>
@@ -348,7 +348,21 @@
       <form onsubmit="handleRegister(event)">
         <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="regName" class="form-input" required></div>
         <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="regNick" class="form-input"></div>
-        <div class="form-group"><label>แผนก / ส่วนงาน</label><input type="text" id="regDept" class="form-input"></div>
+        <div class="form-group">
+          <label>กลุ่ม</label>
+          <select id="regDept" class="form-input">
+            <option value="" disabled selected>เลือกกลุ่ม</option>
+            <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+            <option value="กลุ่มจัดตั้งและส่งเสริมสหกรณ์">กลุ่มจัดตั้งและส่งเสริมสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมและพัฒนาธุรกิจสหกรณ์">กลุ่มส่งเสริมและพัฒนาธุรกิจสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมและพัฒนาการบริหารการจัดการสหกรณ์">กลุ่มส่งเสริมและพัฒนาการบริหารการจัดการสหกรณ์</option>
+            <option value="กลุ่มตรวจการสหกรณ์">กลุ่มตรวจการสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 1">กลุ่มส่งเสริมสหกรณ์ 1</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 2">กลุ่มส่งเสริมสหกรณ์ 2</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 3">กลุ่มส่งเสริมสหกรณ์ 3</option>
+            <option value="นิคมสหกรณ์ชะแวะ">นิคมสหกรณ์ชะแวะ</option>
+          </select>
+        </div>
         <div class="form-group"><label>เบอร์โทร</label><input type="text" id="regPhone" class="form-input"></div>
         <div class="form-group"><label>ชื่อผู้ใช้ (ภาษาอังกฤษ) *</label><input type="text" id="regUser" class="form-input" required pattern="[A-Za-z0-9]+"></div>
         <div class="form-group"><label>รหัสผ่าน *</label><input type="password" id="regPass" class="form-input" required></div>
@@ -406,7 +420,21 @@
         </div>
         <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="profName" class="form-input" required></div>
         <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="profNick" class="form-input"></div>
-        <div class="form-group"><label>แผนก / ส่วนงาน</label><input type="text" id="profDept" class="form-input"></div>
+        <div class="form-group">
+          <label>กลุ่ม</label>
+          <select id="profDept" class="form-input">
+            <option value="">เลือกกลุ่ม</option>
+            <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+            <option value="กลุ่มจัดตั้งและส่งเสริมสหกรณ์">กลุ่มจัดตั้งและส่งเสริมสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมและพัฒนาธุรกิจสหกรณ์">กลุ่มส่งเสริมและพัฒนาธุรกิจสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมและพัฒนาการบริหารการจัดการสหกรณ์">กลุ่มส่งเสริมและพัฒนาการบริหารการจัดการสหกรณ์</option>
+            <option value="กลุ่มตรวจการสหกรณ์">กลุ่มตรวจการสหกรณ์</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 1">กลุ่มส่งเสริมสหกรณ์ 1</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 2">กลุ่มส่งเสริมสหกรณ์ 2</option>
+            <option value="กลุ่มส่งเสริมสหกรณ์ 3">กลุ่มส่งเสริมสหกรณ์ 3</option>
+            <option value="นิคมสหกรณ์ชะแวะ">นิคมสหกรณ์ชะแวะ</option>
+          </select>
+        </div>
         <div class="form-group"><label>เบอร์โทร</label><input type="text" id="profPhone" class="form-input"></div>
         <button type="submit" class="btn-primary"><i class="fi fi-rr-disk" style="margin-right:6px"></i> บันทึกโปรไฟล์</button>
       </form>
