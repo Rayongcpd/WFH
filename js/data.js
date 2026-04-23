@@ -115,7 +115,7 @@ async function renderUserDashboard() {
   }
 
   try {
-    const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
+    const data = await API.call('getPersonalStats', { username: AppState.currentUser.username, requestorUsername: AppState.currentUser.username }, 'GET');
     if (!data.success) return;
 
     const si = document.getElementById('dashStatIn');
@@ -849,7 +849,10 @@ async function exportToCSV() {
 async function printUserReport(username) {
   showLoading(true);
   try {
-    const res = await API.call('getPersonalStats', { username: username }, 'GET');
+    const res = await API.call('getPersonalStats', {
+      username: username,
+      requestorUsername: AppState.currentUser?.username || ''
+    }, 'GET');
     showLoading(false);
     if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
     
