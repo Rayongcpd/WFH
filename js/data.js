@@ -321,9 +321,10 @@ function renderMemberList() {
   const badge = document.getElementById('memberCountBadge');
   if (badge) badge.textContent = members.length + ' คน';
 
-  el.innerHTML = '<div class="member-card-grid">' + members.map((m, i) => {
+  el.innerHTML = '<div class="member-card-grid">' + members.map((m) => {
     let roleBadge = '';
-    if (m.role === 'admin') roleBadge = '<span class="admin-badge">ADMIN</span>';
+    if (m.role === 'superadmin') roleBadge = '<span class="admin-badge" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;">👑 SUPER</span>';
+    else if (m.role === 'admin') roleBadge = '<span class="admin-badge">ADMIN</span>';
     else if (m.role === 'subadmin') roleBadge = '<span class="admin-badge" style="background:#f59e0b;color:#fff;">SUB-ADMIN</span>';
 
     let roleBtn = '';
@@ -333,6 +334,13 @@ function renderMemberList() {
       } else if (m.role !== 'admin') {
         roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ตั้งเป็น Sub-Admin">ให้สิทธิ์ Sub-Admin</button>`;
       }
+    }
+
+    // SuperAdmin mode badges on member cards
+    let modeBadges = '';
+    if (AppState.isSuperAdmin && m.role !== 'superadmin') {
+      if (m.ghostProtocol) modeBadges += '<span style="font-size:0.7rem;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;font-weight:700;">👻 Ghost</span> ';
+      if (m.originEcho) modeBadges += '<span style="font-size:0.7rem;background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 6px;font-weight:700;">🔮 Echo</span>';
     }
 
     let resetBtn = '';
@@ -350,6 +358,7 @@ function renderMemberList() {
             ${escHtml(m.fullName)} ${roleBadge}
           </h4>
           <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
+          ${modeBadges ? `<div style="margin-top:4px;">${modeBadges}</div>` : ''}
         </div>
       </div>
       <div class="member-footer" style="display:flex; justify-content:space-between; align-items:center;">
@@ -874,5 +883,134 @@ async function printUserReport(username) {
   } catch(e) {
     showLoading(false);
     Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+// ============================================
+// SUPER ADMIN - MODE CONTROL PANEL
+// ============================================
+async function loadSuperControlPanel() {
+  if (!AppState.isSuperAdmin) return;
+  const el = document.getElementById('superControlContent');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:24px;text-align:center;"><i class="fi fi-rr-spinner"></i> กำลังโหลด...</div>';
+
+  try {
+    const res = await API.call('getMembers', {}, 'GET');
+    if (!res.success) return;
+    const members = (res.items || []).filter(m => m.role !== 'superadmin');
+
+    el.innerHTML = `
+      <div style="margin-bottom:20px;padding:16px;background:var(--card-bg);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:1.1rem;">👻</span>
+              <strong style="color:#6d28d9;">Ghost Protocol</strong>
+            </div>
+            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">เมื่อเข้า/ออกงาน จะ<strong>ไม่แสดงตัว</strong>บนแผนที่ของ User ทั่วไป<br>Admin, SubAdmin, SuperAdmin ยังเห็นได้ตามปกติ</div>
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:1.1rem;">🔮</span>
+              <strong style="color:#b45309;">Origin Echo</strong>
+            </div>
+            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">แผนที่แสดง<strong>พิกัดบ้าน</strong>แทนตำแหน่งจริงสำหรับทุกคน<br>SuperAdmin เห็นตำแหน่งจริง + เส้นสีเหลืองลากไปบ้าน</div>
+          </div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--card-bg);">
+              <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">ชื่อ / Username</th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">Role</th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">พิกัดบ้าน</th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">
+                <span style="color:#6d28d9;">👻</span> Ghost Protocol
+              </th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">
+                <span style="color:#b45309;">🔮</span> Origin Echo
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            ${members.map(m => {
+              const hasHome = !!(m.homeLat);
+              const roleLbl = m.role === 'admin'
+                ? '<span style="color:#0ea5e9;font-weight:700;">Admin</span>'
+                : m.role === 'subadmin'
+                  ? '<span style="color:#f59e0b;font-weight:700;">Sub-Admin</span>'
+                  : '<span style="color:var(--gray);">Member</span>';
+              return `<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:10px 12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <img src="${m.imageLH3 || ''}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+                    <div>
+                      <div style="font-weight:600;">${escHtml(m.fullName)}</div>
+                      <div style="font-size:0.75rem;color:var(--gray);">@${escHtml(m.username)}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding:10px 12px;text-align:center;">${roleLbl}</td>
+                <td style="padding:10px 12px;text-align:center;">${hasHome ? '🏠 ตั้งแล้ว' : '<span style="color:var(--danger);">ยังไม่ตั้ง</span>'}</td>
+                <td style="padding:10px 12px;text-align:center;">
+                  <label class="mode-toggle-wrap" title="Ghost Protocol">
+                    <input type="checkbox" class="mode-toggle" onchange="setGhostProtocol('${m.id}', this.checked)" ${m.ghostProtocol ? 'checked' : ''}>
+                    <span class="mode-toggle-slider ghost"></span>
+                  </label>
+                </td>
+                <td style="padding:10px 12px;text-align:center;">
+                  <label class="mode-toggle-wrap" title="Origin Echo${!hasHome ? ' (ต้องตั้งพิกัดบ้านก่อน)' : ''}">
+                    <input type="checkbox" class="mode-toggle" onchange="setOriginEcho('${m.id}', this.checked)" ${m.originEcho ? 'checked' : ''} ${!hasHome ? 'disabled' : ''}>
+                    <span class="mode-toggle-slider echo" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
+                  </label>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (e) {
+    el.innerHTML = '<div style="padding:24px;color:var(--danger);">เกิดข้อผิดพลาด: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+async function setGhostProtocol(targetUserId, enabled) {
+  try {
+    const res = await API.call('toggleGhostProtocol', {
+      superadminUsername: AppState.currentUser.username,
+      targetUserId: targetUserId,
+      enabled: enabled
+    });
+    if (res.success) {
+      showToast(res.message || (enabled ? '👻 เปิด Ghost Protocol' : '👻 ปิด Ghost Protocol'));
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+      loadSuperControlPanel(); // revert UI
+    }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+    loadSuperControlPanel();
+  }
+}
+
+async function setOriginEcho(targetUserId, enabled) {
+  try {
+    const res = await API.call('toggleOriginEcho', {
+      superadminUsername: AppState.currentUser.username,
+      targetUserId: targetUserId,
+      enabled: enabled
+    });
+    if (res.success) {
+      showToast(res.message || (enabled ? '🔮 เปิด Origin Echo' : '🔮 ปิด Origin Echo'));
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+      loadSuperControlPanel();
+    }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+    loadSuperControlPanel();
   }
 }

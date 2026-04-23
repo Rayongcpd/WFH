@@ -131,7 +131,8 @@ async function handleLogin(e) {
 async function finalizeLogin(profile, username, password) {
   AppState.currentUser = profile || {};
   AppState.role = (profile.role || '').toLowerCase();
-  AppState.isAdmin = ['admin', 'subadmin'].includes(AppState.role);
+  AppState.isAdmin = ['admin', 'subadmin', 'superadmin'].includes(AppState.role);
+  AppState.isSuperAdmin = AppState.role === 'superadmin';
 
   try {
     const res = await API.call('getConfig', {}, 'GET');
@@ -211,6 +212,9 @@ function buildSidebarMenu() {
     h += menuItem('adminStats', 'fi fi-rr-chart-pie', 'สรุปสถิติ');
     h += '<div class="sidebar-menu-label" style="margin-top:16px;">จัดการ</div>';
     h += menuItem('settings', 'fi fi-rr-settings', 'ตั้งค่า');
+    if (AppState.isSuperAdmin) {
+      h += menuItem('superControl', 'fi fi-rr-shield-check', 'ควบคุมโหมด');
+    }
   } else {
     h += menuItem('home', 'fi fi-rr-home', 'หน้าหลัก');
     h += menuItem('plans', 'fi fi-rr-clipboard-list-check', 'แผนงาน');
@@ -230,6 +234,7 @@ function buildBottomNav() {
       { tab: 'map', icon: 'fi fi-rr-map', label: 'แผนที่' },
       { tab: 'plans', icon: 'fi fi-rr-clipboard-list-check', label: 'แผนงาน' },
       { tab: 'adminStats', icon: 'fi fi-rr-chart-pie', label: 'สรุป' },
+      ...(AppState.isSuperAdmin ? [{ tab: 'superControl', icon: 'fi fi-rr-shield-check', label: 'โหมด' }] : [])
     ]
     : [
       { tab: 'home', icon: 'fi fi-rr-home', label: 'หน้าหลัก' },
@@ -252,7 +257,9 @@ function menuItem(tab, icon, label) {
 function updateSidebarUser() {
   if (!AppState.currentUser) return;
   const n = AppState.currentUser.nickname || AppState.currentUser.fullName || '-';
-  const r = AppState.role === 'admin' ? 'Administrator' : AppState.role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่';
+  const r = AppState.role === 'superadmin' ? '👑 Super Admin'
+    : AppState.role === 'admin' ? 'Administrator'
+    : AppState.role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่';
   const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   el('sidebarUserName', n); el('sidebarUserRole', r);
   el('adminWelcomeName', n);
@@ -267,7 +274,7 @@ function switchTab(tab) {
   document.querySelector(`.nav-link-sidebar[data-tab="${tab}"]`)?.classList.add('active');
   document.querySelectorAll('#bottomNav .bn-item').forEach(b => b.classList.toggle('bn-active', b.dataset.tab === tab));
 
-  const titles = { home: 'ภาพรวม', map: 'แผนที่', stats: 'สถิติ', adminStats: 'สรุปสถิติ', settings: 'ตั้งค่า', plans: 'แผนงาน' };
+  const titles = { home: 'ภาพรวม', map: 'แผนที่', stats: 'สถิติ', adminStats: 'สรุปสถิติ', settings: 'ตั้งค่า', plans: 'แผนงาน', superControl: '👑 ควบคุมโหมด' };
   const ht = document.getElementById('headerPageTitle');
   if (ht) ht.textContent = titles[tab] || tab;
 
@@ -294,6 +301,9 @@ function switchTab(tab) {
   } else if (tab === 'plans') {
     document.getElementById('viewPlans')?.classList.add('active');
     if (typeof loadDailyPlans === 'function') loadDailyPlans();
+  } else if (tab === 'superControl') {
+    document.getElementById('viewSuperControl')?.classList.add('active');
+    if (typeof loadSuperControlPanel === 'function') loadSuperControlPanel();
   }
 }
 
@@ -319,7 +329,7 @@ async function loadAdminDashboard() {
     const res = await API.call('getTodayStats', {}, 'GET');
     if (res.success) {
       const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-      const validMembers = AppState.membersCache.filter(m => m.role !== 'admin' && m.role !== 'subadmin');
+      const validMembers = AppState.membersCache.filter(m => !['admin', 'subadmin', 'superadmin'].includes(m.role));
       const validCount = validMembers.length;
 
       setVal('execTotal', validCount);

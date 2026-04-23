@@ -268,3 +268,65 @@ a { text-decoration:none; color:var(--primary); }
 @media (min-width:769px) {
   .bottom-nav { display:none !important; }
 }
+
+/* ====== MODE TOGGLE SWITCH (Super Admin) ====== */
+.mode-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+.mode-toggle-wrap input.mode-toggle {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.mode-toggle-slider {
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.25s;
+  cursor: pointer;
+}
+.mode-toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.mode-toggle input:checked + .mode-toggle-slider.ghost {
+  background: #6d28d9;
+}
+.mode-toggle input:checked + .mode-toggle-slider.echo {
+  background: #b45309;
+}
+.mode-toggle input:checked + .mode-toggle-slider::before {
+  transform: translateX(20px);
+}
+.mode-toggle input:disabled + .mode-toggle-slider {
+  cursor: not-allowed;
+}
+
+/* ====== ECHO TOOLTIP (Leaflet) ====== */
+.echo-tooltip {
+  background: rgba(245,158,11,0.92) !important;
+  color: #1c1917 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 0.78rem !important;
+  padding: 4px 10px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+.echo-tooltip::before { display: none !important; }

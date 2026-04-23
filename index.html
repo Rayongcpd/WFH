@@ -312,6 +312,24 @@
           </form>
         </section>
 
+        <!-- ====== SUPER CONTROL PANEL ====== -->
+        <section id="viewSuperControl" class="view-section">
+          <div class="card" style="margin-bottom:16px;border:2px solid #7c3aed;">
+            <div class="card-header" style="background:linear-gradient(135deg,#7c3aed22,#4f46e511);">
+              <h3 style="color:#7c3aed;">
+                <i class="fi fi-rr-shield-check" style="color:#7c3aed"></i>
+                👑 Super Admin — ควบคุมโหมดพิเศษ
+              </h3>
+              <button onclick="loadSuperControlPanel()" style="background:var(--bg);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit">
+                <i class="fi fi-rr-rotate-right"></i>
+              </button>
+            </div>
+            <div class="card-body" id="superControlContent">
+              <div class="empty-state"><span>กำลังโหลด...</span></div>
+            </div>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
