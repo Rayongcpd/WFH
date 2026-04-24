@@ -258,7 +258,9 @@ a { text-decoration:none; color:var(--primary); }
 .bn-item.bn-active .bn-icon-wrap { background:var(--primary-bg); color:var(--primary); }
 
 /* ====== MAP ====== */
-#map { height:calc(100vh - 160px); min-height:350px; border-radius:0 0 16px 16px; z-index:1; }
+#viewMap.active { display:flex; flex-direction:column; height:calc(100vh - 97px); }
+#viewMap .card { flex:1; display:flex; flex-direction:column; min-height:0; }
+#map { flex:1; min-height:250px; border-radius:0 0 16px 16px; z-index:1; }
 .custom-marker { background:none !important; border:none !important; }
 
 /* ====== RESPONSIVE ====== */
@@ -275,6 +277,7 @@ a { text-decoration:none; color:var(--primary); }
   .indv-table { font-size:0.75rem; }
   .indv-table th, .indv-table td { padding:8px 6px; }
   #map { height:calc(100vh - 190px); min-height:280px; }
+  #viewMap.active { height:calc(100vh - 145px); }
 }
 @media (min-width:769px) {
   .bottom-nav { display:none !important; }
