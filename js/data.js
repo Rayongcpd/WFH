@@ -284,10 +284,11 @@ async function loadAdminStats() {
     if (!res.success) return;
     const stats = (res.stats || []).sort((a, b) => {
       const getPrio = (m) => {
+        const p = m.position || '';
         const d = m.department || '';
-        if (d.includes('ผู้บริหาร')) return 1;
-        if (d.includes('หัวหน้าฝ่าย')) return 2;
-        if (d.includes('ผู้อำนวยการ')) return 3;
+        if (p.includes('ผู้บริหาร') || d.includes('ผู้บริหาร')) return 1;
+        if (p.includes('หัวหน้าฝ่าย') || d.includes('หัวหน้าฝ่าย')) return 2;
+        if (p.includes('ผู้อำนวยการ') || d.includes('ผู้อำนวยการ')) return 3;
         return 4;
       };
       const pa = getPrio(a);
@@ -338,6 +339,7 @@ function renderMemberList() {
   if (badge) badge.textContent = members.length + ' คน';
 
   el.innerHTML = '<div class="member-card-grid">' + members.map((m) => {
+    const posLabel = m.position || AppState.configCache?.staff_label || 'เจ้าหน้าที่';
     let roleBadge = '';
     if (m.role === 'superadmin') roleBadge = '<span class="admin-badge" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;">👑 SUPER</span>';
     else if (m.role === 'admin') roleBadge = '<span class="admin-badge">ADMIN</span>';
@@ -369,12 +371,11 @@ function renderMemberList() {
     <div class="member-item">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
-        <div style="flex:1;min-width:0">
-          <h4 class="member-name">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${m.isWorking ? 'var(--success)' : 'var(--danger)'};margin-right:6px;box-shadow:0 0 0 2px ${m.isWorking ? 'var(--success-bg)' : 'var(--danger-bg)'}" title="${m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว'}"></span>
-            ${escHtml(m.fullName)} ${roleBadge}
-          </h4>
-          <p class="member-dept"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุ')}</p>
+        <div class="member-info">
+          <div class="member-name">${escHtml(m.fullName)} (${escHtml(m.nickname || '-')})</div>
+          <div class="member-dept" style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">
+            <i class="fi fi-rr-briefcase" style="font-size:0.7rem"></i> ${escHtml(posLabel)} | ${escHtml(m.department || 'ไม่ระบุกลุ่ม')}
+          </div>
           ${modeBadges ? `<div style="margin-top:4px;">${modeBadges}</div>` : ''}
         </div>
       </div>
@@ -682,15 +683,16 @@ async function handleRegister(e) {
 
   showLoading(true);
   try {
-    const payload = {
-      fullName: document.getElementById('regName').value,
-      nickname: document.getElementById('regNick').value,
-      department: document.getElementById('regDept').value,
-      phone: document.getElementById('regPhone').value,
+    const data = {
+      fullName: document.getElementById('regName')?.value.trim(),
+      nickname: document.getElementById('regNick')?.value.trim(),
+      position: document.getElementById('regPosition')?.value.trim(),
+      department: document.getElementById('regDept')?.value.trim(),
+      phone: document.getElementById('regPhone').value.trim(),
       username: username,
       password: document.getElementById('regPass').value
     };
-    const res = await API.call('register', payload);
+    const res = await API.call('register', data);
     showLoading(false);
     if (res.success) {
       closeModal('registerModal');
@@ -699,8 +701,8 @@ async function handleRegister(e) {
         showToast('เพิ่มสมาชิกสำเร็จ');
       } else {
         // Auto login
-        const lr = await API.call('login', { username: payload.username, password: payload.password });
-        if (lr.success) await finalizeLogin(lr.profile, payload.username, payload.password);
+        const lr = await API.call('login', { username: data.username, password: data.password });
+        if (lr.success) await finalizeLogin(lr.profile, data.username, data.password);
       }
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
@@ -731,8 +733,10 @@ async function handleForgotSubmit(e) {
 function openProfileModal() {
   if (!AppState.currentUser) return;
   const u = AppState.currentUser;
+  document.getElementById('profId').value = u.id || '';
   document.getElementById('profName').value = u.fullName || '';
   document.getElementById('profNick').value = u.nickname || '';
+  document.getElementById('profPosition').value = u.position || '';
   document.getElementById('profDept').value = u.department || '';
   document.getElementById('profPhone').value = u.phone || '';
   document.getElementById('profImage').value = '';
@@ -791,11 +795,12 @@ async function handleUpdateProfile(e) {
 
 async function submitProfileUpdate(imagePayload) {
   const payload = {
-    id: AppState.currentUser.id,
-    fullName: document.getElementById('profName').value.trim(),
-    nickname: document.getElementById('profNick').value.trim(),
-    department: document.getElementById('profDept').value.trim(),
-    phone: document.getElementById('profPhone').value.trim()
+    id: document.getElementById('profId')?.value || AppState.currentUser.id,
+    fullName: document.getElementById('profName')?.value.trim(),
+    nickname: document.getElementById('profNick')?.value.trim(),
+    position: document.getElementById('profPosition')?.value.trim(),
+    department: document.getElementById('profDept')?.value.trim(),
+    phone: document.getElementById('profPhone')?.value.trim()
   };
   if (imagePayload) {
     payload.image = imagePayload;
@@ -811,6 +816,7 @@ async function submitProfileUpdate(imagePayload) {
       // Update local state temporarily
       AppState.currentUser.fullName = payload.fullName;
       AppState.currentUser.nickname = payload.nickname;
+      AppState.currentUser.position = payload.position;
       AppState.currentUser.department = payload.department;
       AppState.currentUser.phone = payload.phone;
       if (imagePayload) {
@@ -924,10 +930,11 @@ async function loadSuperControlPanel() {
     if (!res.success) return;
     const members = (res.items || []).filter(m => m.role !== 'superadmin').sort((a, b) => {
       const getPrio = (m) => {
+        const p = m.position || '';
         const d = m.department || '';
-        if (d.includes('ผู้บริหาร')) return 1;
-        if (d.includes('หัวหน้าฝ่าย')) return 2;
-        if (d.includes('ผู้อำนวยการ')) return 3;
+        if (p.includes('ผู้บริหาร') || d.includes('ผู้บริหาร')) return 1;
+        if (p.includes('หัวหน้าฝ่าย') || d.includes('หัวหน้าฝ่าย')) return 2;
+        if (p.includes('ผู้อำนวยการ') || d.includes('ผู้อำนวยการ')) return 3;
         return 4;
       };
       const pa = getPrio(a);

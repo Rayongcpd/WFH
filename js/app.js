@@ -322,10 +322,11 @@ async function loadMembers() {
       // Sort members by priority: ผู้บริหาร > หัวหน้าฝ่าย > ผู้อำนวยการ > เจ้าหน้าที่
       AppState.membersCache = (res.items || []).sort((a, b) => {
         const getPrio = (m) => {
+          const p = m.position || '';
           const d = m.department || '';
-          if (d.includes('ผู้บริหาร')) return 1;
-          if (d.includes('หัวหน้าฝ่าย')) return 2;
-          if (d.includes('ผู้อำนวยการ')) return 3;
+          if (p.includes('ผู้บริหาร') || d.includes('ผู้บริหาร')) return 1;
+          if (p.includes('หัวหน้าฝ่าย') || d.includes('หัวหน้าฝ่าย')) return 2;
+          if (p.includes('ผู้อำนวยการ') || d.includes('ผู้อำนวยการ')) return 3;
           return 4; // เจ้าหน้าที่ or others
         };
         const pa = getPrio(a);
