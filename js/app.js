@@ -319,7 +319,26 @@ async function loadMembers() {
   try {
     const res = await API.call('getMembers', {}, 'GET');
     if (res.success) {
-      AppState.membersCache = res.items || [];
+      // Sort members by priority: ผู้บริหาร > หัวหน้าฝ่าย > ผู้อำนวยการ > เจ้าหน้าที่
+      AppState.membersCache = (res.items || []).sort((a, b) => {
+        const getPrio = (m) => {
+          const d = m.department || '';
+          if (d.includes('ผู้บริหาร')) return 1;
+          if (d.includes('หัวหน้าฝ่าย')) return 2;
+          if (d.includes('ผู้อำนวยการ')) return 3;
+          return 4; // เจ้าหน้าที่ or others
+        };
+        const pa = getPrio(a);
+        const pb = getPrio(b);
+        if (pa !== pb) return pa - pb;
+        
+        // If same priority (like "เจ้าหน้าที่"), sort by department to group them together
+        if (a.department !== b.department) {
+          return (a.department || '').localeCompare(b.department || '', 'th');
+        }
+        return (a.fullName || '').localeCompare(b.fullName || '', 'th');
+      });
+      
       if (AppState.isAdmin && typeof renderMemberList === 'function') renderMemberList();
       if (AppState.isAdmin && typeof updateAdminStats === 'function') updateAdminStats();
     }

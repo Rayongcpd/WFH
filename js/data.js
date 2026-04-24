@@ -282,7 +282,20 @@ async function loadAdminStats() {
   try {
     const res = await API.call('getAllStats', {}, 'GET');
     if (!res.success) return;
-    const stats = res.stats || [];
+    const stats = (res.stats || []).sort((a, b) => {
+      const getPrio = (m) => {
+        const d = m.department || '';
+        if (d.includes('ผู้บริหาร')) return 1;
+        if (d.includes('หัวหน้าฝ่าย')) return 2;
+        if (d.includes('ผู้อำนวยการ')) return 3;
+        return 4;
+      };
+      const pa = getPrio(a);
+      const pb = getPrio(b);
+      if (pa !== pb) return pa - pb;
+      if (a.department !== b.department) return (a.department || '').localeCompare(b.department || '', 'th');
+      return (a.fullName || '').localeCompare(b.fullName || '', 'th');
+    });
 
     let totalIn = 0, totalOut = 0;
     stats.forEach(s => { totalIn += s.checkIn; totalOut += s.checkOut; });
@@ -909,7 +922,20 @@ async function loadSuperControlPanel() {
   try {
     const res = await API.call('getMembers', {}, 'GET');
     if (!res.success) return;
-    const members = (res.items || []).filter(m => m.role !== 'superadmin');
+    const members = (res.items || []).filter(m => m.role !== 'superadmin').sort((a, b) => {
+      const getPrio = (m) => {
+        const d = m.department || '';
+        if (d.includes('ผู้บริหาร')) return 1;
+        if (d.includes('หัวหน้าฝ่าย')) return 2;
+        if (d.includes('ผู้อำนวยการ')) return 3;
+        return 4;
+      };
+      const pa = getPrio(a);
+      const pb = getPrio(b);
+      if (pa !== pb) return pa - pb;
+      if (a.department !== b.department) return (a.department || '').localeCompare(b.department || '', 'th');
+      return (a.fullName || '').localeCompare(b.fullName || '', 'th');
+    });
 
     el.innerHTML = `
       <div style="margin-bottom:20px;padding:16px;background:var(--card-bg);border-radius:12px;border:1px solid var(--border);">
