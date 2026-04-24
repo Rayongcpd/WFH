@@ -348,9 +348,9 @@ function renderMemberList() {
     let roleBtn = '';
     if ((AppState.role === 'admin' || AppState.role === 'superadmin') && m.username !== AppState.currentUser.username && m.username !== 'admin') {
       if (m.role === 'subadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:2px;" title="ลดสิทธิ์"><i class="fi fi-rr-angle-double-small-down"></i>ลดสิทธิ์</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:transparent;color:#d97706;border:1.5px dashed #fcd34d;border-radius:6px;padding:3px 8px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-family:inherit;" title="ลดสิทธิ์เป็นสมาชิกทั่วไป"><i class="fi fi-rr-arrow-small-down"></i> ลดสิทธิ์</button>`;
       } else if (m.role !== 'admin' && m.role !== 'superadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:2px;" title="ให้สิทธิ์ Sub-Admin"><i class="fi fi-rr-shield-plus"></i>SubAdmin</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:transparent;color:#0284c7;border:1.5px dashed #bae6fd;border-radius:6px;padding:3px 8px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-family:inherit;" title="เพิ่มสิทธิ์เป็น Sub-Admin"><i class="fi fi-rr-arrow-small-up"></i> เพิ่มสิทธิ์</button>`;
       }
     }
 
