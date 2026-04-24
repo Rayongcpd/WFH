@@ -349,7 +349,15 @@
       <form onsubmit="handleRegister(event)">
         <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="regName" class="form-input" required></div>
         <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="regNick" class="form-input"></div>
-        <div class="form-group"><label>ตำแหน่ง (เช่น ผู้อำนวยการ, เจ้าหน้าที่)</label><input type="text" id="regPosition" class="form-input" placeholder="เจ้าหน้าที่"></div>
+        <div class="form-group"><label>ตำแหน่ง *</label>
+          <select id="regPosition" class="form-input" required>
+            <option value="" disabled selected>เลือกตำแหน่ง</option>
+            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+            <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+            <option value="หัวหน้าฝ่าย">หัวหน้าฝ่าย</option>
+            <option value="ผู้บริหาร">ผู้บริหาร</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>กลุ่ม</label>
           <select id="regDept" class="form-input">
@@ -423,7 +431,15 @@
         </div>
         <div class="form-group"><label>ชื่อ - นามสกุล *</label><input type="text" id="profName" class="form-input" required></div>
         <div class="form-group"><label>ชื่อเล่น</label><input type="text" id="profNick" class="form-input"></div>
-        <div class="form-group"><label>ตำแหน่ง</label><input type="text" id="profPosition" class="form-input" placeholder="เจ้าหน้าที่"></div>
+        <div class="form-group"><label>ตำแหน่ง</label>
+          <select id="profPosition" class="form-input">
+            <option value="">เลือกตำแหน่ง</option>
+            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+            <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+            <option value="หัวหน้าฝ่าย">หัวหน้าฝ่าย</option>
+            <option value="ผู้บริหาร">ผู้บริหาร</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>กลุ่ม</label>
           <select id="profDept" class="form-input">

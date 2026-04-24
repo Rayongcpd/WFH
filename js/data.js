@@ -375,7 +375,10 @@ function renderMemberList() {
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div class="member-info">
-          <div class="member-name">${escHtml(m.fullName)} (${escHtml(m.nickname || '-')}) ${roleBadge}</div>
+          <div class="member-name">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${m.isWorking ? 'var(--success)' : 'var(--danger)'};margin-right:6px;vertical-align:middle;box-shadow:0 0 0 2px ${m.isWorking ? 'var(--success-bg)' : 'var(--danger-bg)'}" title="${m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว'}"></span>
+            ${escHtml(m.fullName)} (${escHtml(m.nickname || '-')}) ${roleBadge}
+          </div>
           <div class="member-dept" style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">
             <i class="fi fi-rr-briefcase" style="font-size:0.7rem"></i> ${escHtml(posLabel)} | ${escHtml(m.department || 'ไม่ระบุกลุ่ม')}
           </div>
