@@ -14,6 +14,16 @@ function initMap() {
     attribution: '© OpenStreetMap'
   }).addTo(wfhMap);
 
+  // Auto-invalidate size when container resizes (orientation change, window resize, etc.)
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      if (wfhMap) wfhMap.invalidateSize();
+    }).observe(container);
+  }
+  window.addEventListener('resize', () => {
+    if (wfhMap) setTimeout(() => wfhMap.invalidateSize(), 150);
+  });
+
   loadMapData();
 }
 
