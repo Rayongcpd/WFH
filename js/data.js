@@ -370,7 +370,7 @@ function renderMemberList() {
       }
     }
 
-    const statusClass = m.isWorking ? 'online' : 'offline';
+    const avatarStatus = m.isWorking ? 'status-online' : 'status-offline';
     const statusTitle = m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว';
     const homeStatus = m.homeLat ? '<span style="color:var(--success);font-size:0.72rem;"><i class="fi fi-rr-check" style="font-size:0.6rem"></i> ตั้งพิกัดแล้ว</span>' : '<span style="color:var(--light-gray);font-size:0.72rem;">ยังไม่ตั้งพิกัด</span>';
 
@@ -378,8 +378,7 @@ function renderMemberList() {
     <div class="member-item">
       <div class="member-header">
         <div class="member-avatar-wrap">
-          <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
-          <span class="member-status-dot ${statusClass}" title="${statusTitle}"></span>
+          <img src="${m.imageLH3 || ''}" class="member-avatar ${avatarStatus}" title="${statusTitle}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         </div>
         <div style="flex:1;min-width:0;">
           <div class="member-name">${escHtml(m.fullName)} ${roleBadge}</div>
