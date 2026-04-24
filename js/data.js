@@ -341,55 +341,61 @@ function renderMemberList() {
   el.innerHTML = '<div class="member-card-grid">' + members.map((m) => {
     const posLabel = m.position || AppState.configCache?.staff_label || 'เจ้าหน้าที่';
     let roleBadge = '';
-    if (m.role === 'superadmin') roleBadge = '<span class="admin-badge" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;">👑 SUPER</span>';
-    else if (m.role === 'admin') roleBadge = '<span class="admin-badge">ADMIN</span>';
-    else if (m.role === 'subadmin') roleBadge = '<span class="admin-badge" style="background:#f59e0b;color:#fff;">SUB-ADMIN</span>';
+    if (m.role === 'superadmin') roleBadge = '<span class="admin-badge" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;">👑 Super</span>';
+    else if (m.role === 'admin') roleBadge = '<span class="admin-badge">Admin</span>';
+    else if (m.role === 'subadmin') roleBadge = '<span class="admin-badge" style="background:#fef3c7;color:#d97706;">Sub-Admin</span>';
 
     let roleBtn = '';
     if ((AppState.role === 'admin' || AppState.role === 'superadmin') && m.username !== AppState.currentUser.username && m.username !== 'admin') {
       if (m.role === 'subadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:flex;align-items:center;gap:3px;" title="ลดสิทธิ์"><i class="fi fi-rr-angle-double-small-down"></i> ลดสิทธิ์</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:2px;" title="ลดสิทธิ์"><i class="fi fi-rr-angle-double-small-down"></i>ลดสิทธิ์</button>`;
       } else if (m.role !== 'admin' && m.role !== 'superadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:flex;align-items:center;gap:3px;" title="ให้สิทธิ์ Sub-Admin"><i class="fi fi-rr-shield-plus"></i> SubAdmin</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:2px;" title="ให้สิทธิ์ Sub-Admin"><i class="fi fi-rr-shield-plus"></i>SubAdmin</button>`;
       }
     }
 
-    // SuperAdmin mode badges on member cards
+    // SuperAdmin mode badges
     let modeBadges = '';
     if (AppState.isSuperAdmin && m.role !== 'superadmin') {
-      if (m.ghostProtocol) modeBadges += '<span style="font-size:0.7rem;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;font-weight:700;">👻 Ghost</span> ';
-      if (m.originEcho) modeBadges += '<span style="font-size:0.7rem;background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 6px;font-weight:700;">🔮 Echo</span>';
+      if (m.ghostProtocol) modeBadges += '<span class="mode-badge-inline" style="background:#ede9fe;color:#6d28d9;">👻 Ghost</span> ';
+      if (m.originEcho) modeBadges += '<span class="mode-badge-inline" style="background:#fef3c7;color:#b45309;">🔮 Echo</span>';
     }
 
     let resetBtn = '';
     let editBtn = '';
     if (AppState.role === 'admin' || AppState.role === 'superadmin') {
-      editBtn = `<button onclick="openMemberEditModal('${m.id}')" style="background:var(--bg);color:var(--gray);border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:0.7rem;cursor:pointer" title="แก้ไขข้อมูล"><i class="fi fi-rr-edit"></i></button>`;
+      editBtn = `<button onclick="openMemberEditModal('${m.id}')" style="background:var(--card-bg);color:var(--gray);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:0.7rem;cursor:pointer" title="แก้ไขข้อมูล"><i class="fi fi-rr-edit"></i></button>`;
       if (m.homeLat) {
-        resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 6px;font-size:0.7rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
+        resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:3px 6px;font-size:0.7rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
       }
     }
 
+    const statusClass = m.isWorking ? 'online' : 'offline';
+    const statusTitle = m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว';
+    const homeStatus = m.homeLat ? '<span style="color:var(--success);font-size:0.72rem;"><i class="fi fi-rr-check" style="font-size:0.6rem"></i> ตั้งพิกัดแล้ว</span>' : '<span style="color:var(--light-gray);font-size:0.72rem;">ยังไม่ตั้งพิกัด</span>';
+
     return `
-    <div class="member-item" style="position:relative">
-      <div style="display:flex;align-items:center;gap:12px">
-        <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
-        <div class="member-info">
-          <div class="member-name">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${m.isWorking ? 'var(--success)' : 'var(--danger)'};margin-right:6px;vertical-align:middle;box-shadow:0 0 0 2px ${m.isWorking ? 'var(--success-bg)' : 'var(--danger-bg)'}" title="${m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว'}"></span>
-            ${escHtml(m.fullName)} (${escHtml(m.nickname || '-')}) ${roleBadge}
-          </div>
-          <div class="member-dept" style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">
-            <i class="fi fi-rr-briefcase" style="font-size:0.7rem"></i> ${escHtml(posLabel)} | ${escHtml(m.department || 'ไม่ระบุกลุ่ม')}
-          </div>
-          ${modeBadges ? `<div style="margin-top:4px;">${modeBadges}</div>` : ''}
-          <div style="font-size:0.72rem;color:var(--light-gray);margin-top:2px;">@${escHtml(m.username)}</div>
+    <div class="member-item">
+      <div class="member-header">
+        <div class="member-avatar-wrap">
+          <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+          <span class="member-status-dot ${statusClass}" title="${statusTitle}"></span>
         </div>
-        <div style="margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-          <div style="display:flex;align-items:center;gap:4px;">
-            ${editBtn}
-            ${resetBtn}
-          </div>
+        <div style="flex:1;min-width:0;">
+          <div class="member-name">${escHtml(m.fullName)} ${roleBadge}</div>
+          <div class="member-meta">${escHtml(m.nickname || '-')} · @${escHtml(m.username)}</div>
+        </div>
+      </div>
+      <div class="member-body">
+        <div class="member-detail-row"><i class="fi fi-rr-briefcase"></i> ${escHtml(posLabel)}</div>
+        <div class="member-detail-row"><i class="fi fi-rr-building"></i> ${escHtml(m.department || 'ไม่ระบุกลุ่ม')}</div>
+        <div class="member-detail-row"><i class="fi fi-rr-marker"></i> ${homeStatus}</div>
+        ${modeBadges ? `<div style="margin-top:6px;">${modeBadges}</div>` : ''}
+      </div>
+      <div class="member-footer">
+        <div class="member-actions">
+          ${editBtn}
+          ${resetBtn}
           ${roleBtn}
         </div>
       </div>
