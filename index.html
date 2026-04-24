@@ -413,6 +413,7 @@
     <div class="modal-header"><h3><i class="fi fi-rr-user-pen" style="margin-right:8px"></i> แก้ไขโปรไฟล์</h3><button class="modal-close" onclick="closeModal('profileModal')"><i class="fi fi-rr-cross-small"></i></button></div>
     <div class="modal-body">
       <form onsubmit="handleUpdateProfile(event)">
+        <input type="hidden" id="profId">
         <div style="text-align:center; margin-bottom:16px;">
           <img id="profPreview" src="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-bottom:8px;display:none;">
           <div class="form-group" style="text-align:left;">

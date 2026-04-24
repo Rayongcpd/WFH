@@ -348,10 +348,9 @@ function renderMemberList() {
     let roleBtn = '';
     if ((AppState.role === 'admin' || AppState.role === 'superadmin') && m.username !== AppState.currentUser.username && m.username !== 'admin') {
       if (m.role === 'subadmin') {
-        const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ลดสถานะเป็น${staffLabel}">ลดสถานะ</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:flex;align-items:center;gap:3px;" title="ลดสิทธิ์"><i class="fi fi-rr-angle-double-small-down"></i> ลดสิทธิ์</button>`;
       } else if (m.role !== 'admin' && m.role !== 'superadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ตั้งเป็น Sub-Admin">ให้สิทธิ์ Sub-Admin</button>`;
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 6px;font-size:0.68rem;cursor:pointer;display:flex;align-items:center;gap:3px;" title="ให้สิทธิ์ Sub-Admin"><i class="fi fi-rr-shield-plus"></i> SubAdmin</button>`;
       }
     }
 
@@ -363,27 +362,32 @@ function renderMemberList() {
     }
 
     let resetBtn = '';
-    if (m.homeLat && (AppState.role === 'admin' || AppState.role === 'superadmin')) {
-      resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
+    let editBtn = '';
+    if (AppState.role === 'admin' || AppState.role === 'superadmin') {
+      editBtn = `<button onclick="openMemberEditModal('${m.id}')" style="background:var(--bg);color:var(--gray);border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:0.7rem;cursor:pointer" title="แก้ไขข้อมูล"><i class="fi fi-rr-edit"></i></button>`;
+      if (m.homeLat) {
+        resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 6px;font-size:0.7rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
+      }
     }
 
     return `
-    <div class="member-item">
+    <div class="member-item" style="position:relative">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${m.imageLH3 || ''}" class="member-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div class="member-info">
-          <div class="member-name">${escHtml(m.fullName)} (${escHtml(m.nickname || '-')})</div>
+          <div class="member-name">${escHtml(m.fullName)} (${escHtml(m.nickname || '-')}) ${roleBadge}</div>
           <div class="member-dept" style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">
             <i class="fi fi-rr-briefcase" style="font-size:0.7rem"></i> ${escHtml(posLabel)} | ${escHtml(m.department || 'ไม่ระบุกลุ่ม')}
           </div>
           ${modeBadges ? `<div style="margin-top:4px;">${modeBadges}</div>` : ''}
+          <div style="font-size:0.72rem;color:var(--light-gray);margin-top:2px;">@${escHtml(m.username)}</div>
         </div>
-      </div>
-      <div class="member-footer" style="display:flex; justify-content:space-between; align-items:center;">
-        <span class="member-username"><i class="fi fi-rr-at"></i>${escHtml(m.username)}</span>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            ${editBtn}
+            ${resetBtn}
+          </div>
           ${roleBtn}
-          ${m.homeLat ? '<span class="home-set">🏠 ตั้งพิกัดแล้ว</span>' + resetBtn : '<span class="home-unset">📍 ยังไม่ตั้งพิกัด</span>'}
         </div>
       </div>
     </div>`;
@@ -730,9 +734,10 @@ async function handleForgotSubmit(e) {
 // ============================================
 // PROFILE MANAGEMENT
 // ============================================
-function openProfileModal() {
-  if (!AppState.currentUser) return;
-  const u = AppState.currentUser;
+function openProfileModal(memberData) {
+  const u = memberData || AppState.currentUser;
+  if (!u) return;
+  
   document.getElementById('profId').value = u.id || '';
   document.getElementById('profName').value = u.fullName || '';
   document.getElementById('profNick').value = u.nickname || '';
@@ -749,7 +754,16 @@ function openProfileModal() {
     preview.style.display = 'none';
   }
   
+  // Update modal title based on whether editing self or others
+  const titleEl = document.querySelector('#profileModal h3');
+  if (titleEl) titleEl.innerHTML = memberData ? `<i class="fi fi-rr-user-pen"></i> แก้ไขข้อมูล: ${escHtml(u.fullName)}` : `<i class="fi fi-rr-user"></i> ข้อมูลส่วนตัว`;
+
   openModal('profileModal');
+}
+
+function openMemberEditModal(id) {
+  const m = AppState.membersCache.find(x => x.id === id);
+  if (m) openProfileModal(m);
 }
 
 function previewProfileImage(input) {
@@ -813,17 +827,17 @@ async function submitProfileUpdate(imagePayload) {
       closeModal('profileModal');
       showToast('อัปเดตโปรไฟล์สำเร็จ');
       
-      // Update local state temporarily
-      AppState.currentUser.fullName = payload.fullName;
-      AppState.currentUser.nickname = payload.nickname;
-      AppState.currentUser.position = payload.position;
-      AppState.currentUser.department = payload.department;
-      AppState.currentUser.phone = payload.phone;
-      if (imagePayload) {
-        AppState.currentUser.imageLH3 = imagePayload.dataUrl;
+      // Update local state if editing self
+      if (payload.id === AppState.currentUser.id) {
+        AppState.currentUser.fullName = payload.fullName;
+        AppState.currentUser.nickname = payload.nickname;
+        AppState.currentUser.position = payload.position;
+        AppState.currentUser.department = payload.department;
+        AppState.currentUser.phone = payload.phone;
+        if (imagePayload) AppState.currentUser.imageLH3 = imagePayload.dataUrl;
+        updateSidebarUser();
       }
       
-      updateSidebarUser();
       const userDash = document.getElementById('viewUserDashboard');
       if (userDash && userDash.classList.contains('active')) {
         renderUserDashboard();
