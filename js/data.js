@@ -93,7 +93,10 @@ async function renderUserDashboard() {
   const avatarEl = document.getElementById('dashAvatar');
   const dateEl = document.getElementById('dashDate');
 
-  if (nickEl) nickEl.textContent = AppState.currentUser.nickname || 'เจ้าหน้าที่';
+  if (nickEl) {
+    const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
+    nickEl.textContent = AppState.currentUser.nickname || staffLabel;
+  }
   if (nameEl) nameEl.textContent = AppState.currentUser.fullName || '-';
   if (avatarEl && AppState.currentUser.imageLH3) avatarEl.src = AppState.currentUser.imageLH3;
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
@@ -328,10 +331,11 @@ function renderMemberList() {
     else if (m.role === 'subadmin') roleBadge = '<span class="admin-badge" style="background:#f59e0b;color:#fff;">SUB-ADMIN</span>';
 
     let roleBtn = '';
-    if (AppState.role === 'admin' && m.username !== AppState.currentUser.username && m.username !== 'admin') {
+    if ((AppState.role === 'admin' || AppState.role === 'superadmin') && m.username !== AppState.currentUser.username && m.username !== 'admin') {
       if (m.role === 'subadmin') {
-        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ลดสถานะเป็นเจ้าหน้าที่">ลดสถานะ</button>`;
-      } else if (m.role !== 'admin') {
+        const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
+        roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'member', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ลดสถานะเป็น${staffLabel}">ลดสถานะ</button>`;
+      } else if (m.role !== 'admin' && m.role !== 'superadmin') {
         roleBtn = `<button onclick="toggleMemberRole('${m.id}', 'subadmin', '${m.fullName.replace(/'/g, "\\'")}')" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="ตั้งเป็น Sub-Admin">ให้สิทธิ์ Sub-Admin</button>`;
       }
     }
@@ -344,7 +348,7 @@ function renderMemberList() {
     }
 
     let resetBtn = '';
-    if (m.homeLat && AppState.role === 'admin') {
+    if (m.homeLat && (AppState.role === 'admin' || AppState.role === 'superadmin')) {
       resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
     }
 
@@ -373,9 +377,10 @@ function renderMemberList() {
 }
 
 async function resetMemberHomeLocation(id, name) {
+  const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
   const r = await Swal.fire({
     title: 'ยืนยันการรีเซ็ตพิกัด?',
-    html: `คุณต้องการรีเซ็ตพิกัดบ้านของ <b>${escHtml(name)}</b> ใช่หรือไม่?<br><span style="font-size:0.85rem;color:var(--gray)">หลังจากรีเซ็ต เจ้าหน้าที่จะสามารถตั้งพิกัดใหม่ด้วยตัวเองได้อีกครั้ง</span>`,
+    html: `คุณต้องการรีเซ็ตพิกัดบ้านของ <b>${escHtml(name)}</b> ใช่หรือไม่?<br><span style="font-size:0.85rem;color:var(--gray)">หลังจากรีเซ็ต ${staffLabel}จะสามารถตั้งพิกัดใหม่ด้วยตัวเองได้อีกครั้ง</span>`,
     icon: 'warning', showCancelButton: true, confirmButtonText: 'รีเซ็ตพิกัด', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ef4444'
   });
   if (!r.isConfirmed) return;
@@ -396,7 +401,8 @@ async function resetMemberHomeLocation(id, name) {
 }
 
 async function toggleMemberRole(id, role, name) {
-  const roleName = role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่ปกติ';
+  const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
+  const roleName = role === 'subadmin' ? 'Sub-Admin' : staffLabel;
   const r = await Swal.fire({
     title: 'ยืนยันการปรับสถานะ?',
     html: `คุณต้องการเปลี่ยนสถานะของ <b>${escHtml(name)}</b> เป็น <b>${roleName}</b> ใช่หรือไม่?`,
@@ -568,6 +574,7 @@ async function loadSettingsForm() {
     const cfg = res.config;
     const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
     setVal('settingAppName', cfg.org_name || cfg.app_name);
+    setVal('settingStaffLabel', cfg.staff_label || 'เจ้าหน้าที่');
     setVal('settingAddress', cfg.org_address);
     setVal('settingPhone', cfg.org_phone);
     setVal('settingHomeRadius', cfg.home_radius || 200);
@@ -612,6 +619,7 @@ async function handleSaveSettings(e) {
     const cfg = AppState.configCache || {};
     cfg.org_name = document.getElementById('settingAppName')?.value.trim();
     cfg.app_name = cfg.org_name;
+    cfg.staff_label = document.getElementById('settingStaffLabel')?.value.trim() || 'เจ้าหน้าที่';
     cfg.org_address = document.getElementById('settingAddress')?.value.trim();
     cfg.org_phone = document.getElementById('settingPhone')?.value.trim();
     cfg.home_radius = parseInt(document.getElementById('settingHomeRadius')?.value) || 200;

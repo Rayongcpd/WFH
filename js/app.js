@@ -190,6 +190,10 @@ function applyConfig(cfg) {
       loginIcon.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.style.background='';this.parentElement.innerHTML='<i class=fi fi-sr-home></i>'">`;
     }
   }
+
+  // Apply staff label
+  const staffLabel = cfg.staff_label || 'เจ้าหน้าที่';
+  document.querySelectorAll('[data-staff-label]').forEach(el => el.textContent = staffLabel);
 }
 
 // ============================================
@@ -257,9 +261,10 @@ function menuItem(tab, icon, label) {
 function updateSidebarUser() {
   if (!AppState.currentUser) return;
   const n = AppState.currentUser.nickname || AppState.currentUser.fullName || '-';
+  const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
   const r = AppState.role === 'superadmin' ? '👑 Super Admin'
     : AppState.role === 'admin' ? 'Administrator'
-    : AppState.role === 'subadmin' ? 'Sub-Admin' : 'เจ้าหน้าที่';
+    : AppState.role === 'subadmin' ? 'Sub-Admin' : staffLabel;
   const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   el('sidebarUserName', n); el('sidebarUserRole', r);
   el('adminWelcomeName', n);

@@ -125,7 +125,7 @@
             <div class="stat-card">
               <div class="stat-icon" style="background:var(--primary-bg)"><i class="fi fi-rr-users" style="color:var(--primary);font-size:18px"></i></div>
               <div class="stat-value" id="execTotal">0</div>
-              <div class="stat-label">เจ้าหน้าที่ทั้งหมด</div>
+              <div class="stat-label"><span data-staff-label>เจ้าหน้าที่</span>ทั้งหมด</div>
             </div>
             <div class="stat-card">
               <div class="stat-icon" style="background:var(--success-bg)"><i class="fi fi-rr-laptop" style="color:var(--success);font-size:18px"></i></div>
@@ -142,7 +142,7 @@
           <!-- Member List -->
           <div class="card">
             <div class="card-header">
-              <h3><i class="fi fi-rr-users" style="color:var(--primary)"></i> รายชื่อเจ้าหน้าที่ <span id="memberCountBadge" style="font-size:0.72rem;color:var(--light-gray);font-weight:400"></span></h3>
+              <h3><i class="fi fi-rr-users" style="color:var(--primary)"></i> รายชื่อ<span data-staff-label>เจ้าหน้าที่</span> <span id="memberCountBadge" style="font-size:0.72rem;color:var(--light-gray);font-weight:400"></span></h3>
             </div>
             <div class="card-body" id="memberList">
               <div class="empty-state"><span>กำลังโหลด...</span></div>
@@ -201,7 +201,7 @@
         <section id="viewMap" class="view-section">
           <div class="card">
             <div class="card-header">
-              <h3><i class="fi fi-rr-map" style="color:var(--primary)"></i> แผนที่ตำแหน่งเจ้าหน้าที่</h3>
+              <h3><i class="fi fi-rr-map" style="color:var(--primary)"></i> แผนที่ตำแหน่ง<span data-staff-label>เจ้าหน้าที่</span></h3>
               <div style="display:flex;gap:6px">
                 <button onclick="loadMapData()" style="background:var(--bg);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit">
                   <i class="fi fi-rr-rotate-right"></i>
@@ -289,6 +289,7 @@
                   </div>
                 </div>
                 <div class="form-group"><label>ชื่อองค์กร / หน่วยงาน</label><input type="text" id="settingAppName" class="form-input" placeholder="ชื่อหน่วยงาน"></div>
+                <div class="form-group"><label>คำเรียกเจ้าหน้าที่ (เช่น บุคลากร, สมาชิก)</label><input type="text" id="settingStaffLabel" class="form-input" placeholder="เจ้าหน้าที่"></div>
                 <div class="form-group"><label>ที่อยู่</label><input type="text" id="settingAddress" class="form-input" placeholder="ที่อยู่"></div>
                 <div class="form-group"><label>เบอร์โทร</label><input type="text" id="settingPhone" class="form-input" placeholder="0XX-XXXXXXX"></div>
               </div>
