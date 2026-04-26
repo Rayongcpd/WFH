@@ -39,7 +39,15 @@ async function loadMapData() {
     wfhMarkers.forEach(m => wfhMap.removeLayer(m));
     wfhMarkers = [];
 
-    const locs = res.locations || [];
+    let locs = res.locations || [];
+    // Filter out superadmin if current user is not superadmin
+    if (AppState.role !== 'superadmin') {
+      locs = locs.filter(loc => {
+        const m = AppState.membersCache.find(x => x.username === loc.username);
+        return m ? m.role !== 'superadmin' : true;
+      });
+    }
+
     const bounds = [];
 
     locs.forEach(loc => {

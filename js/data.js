@@ -282,7 +282,17 @@ async function loadAdminStats() {
   try {
     const res = await API.call('getAllStats', {}, 'GET');
     if (!res.success) return;
-    const stats = (res.stats || []).sort((a, b) => {
+
+    let stats = (res.stats || []);
+    // Filter out superadmin from stats if not superadmin
+    if (AppState.role !== 'superadmin') {
+      stats = stats.filter(s => {
+        const m = AppState.membersCache.find(x => x.username === s.username);
+        return m ? m.role !== 'superadmin' : true;
+      });
+    }
+
+    stats.sort((a, b) => {
       const getPrio = (m) => {
         const p = m.position || '';
         const d = m.department || '';
@@ -334,7 +344,13 @@ async function loadAdminStats() {
 function renderMemberList() {
   const el = document.getElementById('memberList');
   if (!el) return;
-  const members = AppState.membersCache;
+
+  // Filter members: Hide superadmin from others, but show to superadmin themselves
+  let members = AppState.membersCache;
+  if (AppState.role !== 'superadmin') {
+    members = members.filter(m => m.role !== 'superadmin');
+  }
+
   const badge = document.getElementById('memberCountBadge');
   if (badge) badge.textContent = members.length + ' คน';
 

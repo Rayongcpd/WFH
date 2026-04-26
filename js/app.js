@@ -319,8 +319,14 @@ async function loadMembers() {
   try {
     const res = await API.call('getMembers', {}, 'GET');
     if (res.success) {
+      let items = res.items || [];
+      // Filter out superadmin if current user is not superadmin
+      if (AppState.role !== 'superadmin') {
+        items = items.filter(m => m.role !== 'superadmin');
+      }
+
       // Sort members by priority: ผู้บริหาร > หัวหน้าฝ่าย > ผู้อำนวยการ > เจ้าหน้าที่
-      AppState.membersCache = (res.items || []).sort((a, b) => {
+      AppState.membersCache = items.sort((a, b) => {
         const getPrio = (m) => {
           const p = m.position || '';
           const d = m.department || '';
