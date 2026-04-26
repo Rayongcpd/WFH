@@ -261,13 +261,34 @@
 
         <!-- ====== PLANS ====== -->
         <section id="viewPlans" class="view-section">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="font-weight:700;display:flex;align-items:center;gap:8px"><i class="fi fi-rr-clipboard-list-check" style="color:var(--primary)"></i> แผนงานประจำวัน</h3>
-            <button onclick="openPlanModal()" style="background:var(--primary);color:white;border:none;padding:10px 18px;border-radius:12px;font-weight:700;font-size:0.82rem;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
-              <i class="fi fi-rr-plus" style="font-size:11px"></i> เพิ่มแผนงาน
+          <!-- Calendar Card -->
+          <div class="calendar-container">
+            <div class="calendar-header">
+              <div class="calendar-title">
+                <i class="fi fi-rr-calendar"></i>
+                <span id="calendarMonthYear">เมษายน 2569</span>
+              </div>
+              <div class="calendar-nav">
+                <button onclick="changeCalendarMonth(-1)"><i class="fi fi-rr-angle-small-left"></i></button>
+                <button onclick="setCalendarToday()"><i class="fi fi-rr-redo"></i></button>
+                <button onclick="changeCalendarMonth(1)"><i class="fi fi-rr-angle-small-right"></i></button>
+              </div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+              <!-- Calendar days will be injected here -->
+            </div>
+          </div>
+
+          <!-- Plan Details -->
+          <div class="plan-details-header">
+            <div class="plan-details-date" id="selectedPlanDateText">แผนงานประจำวันที่ 26 เมษายน</div>
+            <button onclick="openPlanModal()" class="btn-primary" style="width:auto; padding:10px 18px; border-radius:12px; font-size:0.82rem;">
+              <i class="fi fi-rr-plus" style="font-size:11px; margin-right:6px"></i> เพิ่มแผนงาน
             </button>
           </div>
-          <div id="plansList"><div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>ยังไม่มีแผนงานวันนี้</span></div></div>
+          <div id="plansList">
+            <div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>เลือกวันที่เพื่อดูแผนงาน</span></div>
+          </div>
         </section>
 
         <!-- ====== SETTINGS ====== -->

@@ -507,34 +507,111 @@ async function openSetHomeLocation() {
 }
 
 // ============================================
-// DAILY PLANS
+// DAILY PLANS (CALENDAR)
 // ============================================
-async function loadDailyPlans() {
-  const today = new Date().toISOString().split('T')[0];
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const monthYearLabel = document.getElementById('calendarMonthYear');
+  if (!grid || !monthYearLabel) return;
+
+  const date = AppState.calendarDate;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+  monthYearLabel.textContent = `${monthNames[month]} ${year + 543}`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toLocaleDateString('en-CA');
+
+  let h = '';
+  const days = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  days.forEach(d => h += `<div class="calendar-day-head">${d}</div>`);
+
+  // Empty slots before first day
+  for (let i = 0; i < firstDay; i++) {
+    h += `<div class="calendar-day other-month"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const curDateObj = new Date(year, month, d);
+    const dateStr = curDateObj.toLocaleDateString('en-CA');
+    const isToday = dateStr === today;
+    const isSelected = dateStr === AppState.selectedDate;
+    
+    h += `<div class="calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalendarDate('${dateStr}')">${d}</div>`;
+  }
+
+  grid.innerHTML = h;
+}
+
+function selectCalendarDate(dateStr) {
+  AppState.selectedDate = dateStr;
+  renderCalendar();
+  loadDailyPlans(dateStr);
+}
+
+function changeCalendarMonth(delta) {
+  const d = AppState.calendarDate;
+  AppState.calendarDate = new Date(d.getFullYear(), d.getMonth() + delta, 1);
+  renderCalendar();
+}
+
+function setCalendarToday() {
+  const now = new Date();
+  AppState.calendarDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  AppState.selectedDate = now.toLocaleDateString('en-CA');
+  renderCalendar();
+  loadDailyPlans(AppState.selectedDate);
+}
+
+async function loadDailyPlans(targetDate) {
+  const date = targetDate || AppState.selectedDate || new Date().toLocaleDateString('en-CA');
+  const dateDisplay = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateTextEl = document.getElementById('selectedPlanDateText');
+  if (dateTextEl) dateTextEl.textContent = `แผนงานประจำวันที่ ${dateDisplay}`;
+
   try {
-    const res = await API.call('getDailyPlans', { date: today }, 'GET');
+    const res = await API.call('getDailyPlans', { 
+      date: date, 
+      username: AppState.currentUser.username,
+      role: AppState.role
+    }, 'GET');
     const el = document.getElementById('plansList');
     if (!el) return;
-    const plans = (res.success && res.plans) ? res.plans : [];
+    
+    let plans = (res.success && res.plans) ? res.plans : [];
+    
+    // Filter for members (already done in backend, but good to be sure)
+    // If Admin, they see everyone's plans. If Member, they see only theirs.
+    
     if (!plans.length) {
       AppState.plansCache = [];
-      el.innerHTML = '<div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>ยังไม่มีแผนงานวันนี้</span></div>';
+      el.innerHTML = `<div class="empty-state"><i class="fi fi-rr-clipboard-list-check"></i><span>ไม่มีแผนงานในวันที่ ${dateDisplay}</span></div>`;
       return;
     }
+
     AppState.plansCache = plans;
     el.innerHTML = plans.map(p => {
       const isOwner = p.username === AppState.currentUser.username || AppState.isAdmin;
       const actions = isOwner ? `
         <div style="display:flex;gap:12px;margin-left:12px;">
-          <button onclick="openPlanModal('${p.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:16px"><i class="fi fi-rr-edit"></i></button>
-          <button onclick="deletePlan('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px"><i class="fi fi-rr-trash"></i></button>
+          <button onclick="openPlanModal('${p.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:16px" title="แก้ไข"><i class="fi fi-rr-edit"></i></button>
+          <button onclick="deletePlan('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px" title="ลบ"><i class="fi fi-rr-trash"></i></button>
         </div>` : '';
+      
+      const avatar = p.imageLH3 || AppState.DEFAULT_AVATAR;
+
       return `
       <div class="plan-card">
-        <div class="plan-header" style="align-items:flex-start">
-          <div style="flex:1">
-            <div class="plan-name">${escHtml(p.fullName)}</div>
-            <div class="plan-time">${escHtml(p.timestamp)}</div>
+        <div class="plan-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            <img src="${avatar}" style="width:36px;height:36px;border-radius:10px;object-fit:cover;background:var(--primary-bg)">
+            <div>
+              <div class="plan-name">${escHtml(p.fullName)}</div>
+              <div class="plan-time">${escHtml(p.timestamp)}</div>
+            </div>
           </div>
           ${actions}
         </div>
@@ -580,6 +657,7 @@ async function submitDailyPlan(e) {
       res = await API.call('saveDailyPlan', {
         username: AppState.currentUser.username,
         fullName: AppState.currentUser.fullName,
+        date: AppState.selectedDate,
         tasks: tasks, note: note
       });
     }
@@ -587,7 +665,7 @@ async function submitDailyPlan(e) {
     if (res.success) {
       closeModal('planModal');
       showToast(id ? 'อัปเดตแผนงานสำเร็จ' : 'บันทึกแผนงานสำเร็จ');
-      loadDailyPlans();
+      loadDailyPlans(AppState.selectedDate);
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
     }
@@ -599,9 +677,16 @@ async function deletePlan(id) {
   if (!r.isConfirmed) return;
   showLoading(true);
   try {
-    const res = await API.call('deleteDailyPlan', { id: id, username: AppState.currentUser.username });
+    const res = await API.call('deleteDailyPlan', { 
+      id: id, 
+      username: AppState.currentUser.username,
+      role: AppState.role
+    });
     showLoading(false);
-    if (res.success) { showToast('ลบแผนงานสำเร็จ'); loadDailyPlans(); }
+    if (res.success) { 
+      showToast('ลบแผนงานสำเร็จ'); 
+      loadDailyPlans(AppState.selectedDate); 
+    }
     else Swal.fire('ผิดพลาด', res.message, 'error');
   } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
 }
