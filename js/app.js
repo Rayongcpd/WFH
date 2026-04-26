@@ -14,7 +14,8 @@ const AppState = {
   latestLog: null,
   currentPage: 1,
   itemsPerPage: 20,
-  role: 'member'
+  role: 'member',
+  DEFAULT_AVATAR: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E`
 };
 
 // ============================================
@@ -269,7 +270,7 @@ function updateSidebarUser() {
   el('sidebarUserName', n); el('sidebarUserRole', r);
   el('adminWelcomeName', n);
   const img = document.getElementById('sidebarAvatar');
-  if (img && AppState.currentUser.imageLH3) img.src = AppState.currentUser.imageLH3;
+  if (img) img.src = AppState.currentUser.imageLH3 || AppState.DEFAULT_AVATAR;
 }
 
 function switchTab(tab) {

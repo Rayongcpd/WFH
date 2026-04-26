@@ -98,7 +98,7 @@ async function renderUserDashboard() {
     nickEl.textContent = AppState.currentUser.nickname || staffLabel;
   }
   if (nameEl) nameEl.textContent = AppState.currentUser.fullName || '-';
-  if (avatarEl && AppState.currentUser.imageLH3) avatarEl.src = AppState.currentUser.imageLH3;
+  if (avatarEl) avatarEl.src = AppState.currentUser.imageLH3 || AppState.DEFAULT_AVATAR;
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
 
   const hc = document.getElementById('homeLocationContainer');
@@ -322,7 +322,7 @@ async function loadAdminStats() {
         <tr>
           <td style="text-align:center">${i + 1}</td>
           <td><div style="display:flex;align-items:center;gap:8px">
-            <img src="${s.image || ''}" style="width:30px;height:30px;border-radius:8px;object-fit:cover" onerror="this.style.display='none'">
+            <img src="${s.image || AppState.DEFAULT_AVATAR}" style="width:30px;height:30px;border-radius:8px;object-fit:cover;background:var(--primary-bg)">
             <div><div style="font-weight:600">${escHtml(s.fullName)}</div><div style="font-size:0.72rem;color:#94a3b8">${escHtml(s.department || '')}</div></div>
           </div></td>
           <td>${escHtml(s.department || '-')}</td>
@@ -394,7 +394,7 @@ function renderMemberList() {
     <div class="member-item">
       <div class="member-header">
         <div class="member-avatar-wrap">
-          <img src="${m.imageLH3 || ''}" class="member-avatar ${avatarStatus}" title="${statusTitle}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+          <img src="${m.imageLH3 || AppState.DEFAULT_AVATAR}" class="member-avatar ${avatarStatus}" title="${statusTitle}" style="background:var(--primary-bg)">
         </div>
         <div style="flex:1;min-width:0;">
           <div class="member-name">${escHtml(m.fullName)} ${roleBadge}</div>
@@ -771,11 +771,9 @@ function openProfileModal(memberData) {
   document.getElementById('profImage').value = '';
   
   const preview = document.getElementById('profPreview');
-  if (u.imageLH3) {
-    preview.src = u.imageLH3;
+  if (preview) {
+    preview.src = u.imageLH3 || AppState.DEFAULT_AVATAR;
     preview.style.display = 'inline-block';
-  } else {
-    preview.style.display = 'none';
   }
   
   // Update modal title based on whether editing self or others
