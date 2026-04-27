@@ -369,3 +369,13 @@ input.mode-toggle:disabled + .mode-toggle-slider {
   box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
 }
 .echo-tooltip::before { display: none !important; }
+ 
+/* ====== MINI BUTTONS (Super Admin) ====== */
+.btn-mini { flex: 1; border-radius: 10px; padding: 7px; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; font-family: inherit; transition: all 0.2s; border: 1.5px solid transparent; }
+.btn-mini:hover { transform: translateY(-1px); }
+.btn-mini:active { transform: translateY(0); }
+.btn-mini-in { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+.btn-mini-in:hover { background: var(--success); color: white; }
+.btn-mini-out { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+.btn-mini-out:hover { background: var(--danger); color: white; }
+

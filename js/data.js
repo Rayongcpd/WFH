@@ -22,7 +22,7 @@ async function handleCheckIn() {
   performGPSAction('Check-in');
 }
 
-async function performGPSAction(type) {
+async function performGPSAction(type, targetUser = null) {
   showLoading(true);
   try {
     const pos = await new Promise((resolve, reject) => {
@@ -38,9 +38,10 @@ async function performGPSAction(type) {
       return;
     }
 
+    const user = targetUser || AppState.currentUser;
     const payload = {
-      username: AppState.currentUser.username,
-      fullName: AppState.currentUser.fullName,
+      username: user.username,
+      fullName: user.fullName,
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
       accuracy: pos.coords.accuracy
@@ -62,13 +63,18 @@ async function performGPSAction(type) {
         Swal.fire({
           icon: isHome ? 'success' : 'warning',
           title: `${icon} เข้างานสำเร็จ`,
-          html: `<div style="font-size:0.9rem;color:#475569;">${statusText}</div>`,
+          html: `<div style="font-size:0.9rem;color:#475569;">${statusText} (ทำรายการโดย Admin)</div>`,
           timer: 2500, showConfirmButton: false
         });
       } else {
-        showToast(type === 'Check-in' ? 'เข้างานสำเร็จ' : 'ออกงานสำเร็จ');
+        showToast((targetUser ? `[${user.nickname || user.username}] ` : '') + (type === 'Check-in' ? 'เข้างานสำเร็จ' : 'ออกงานสำเร็จ'));
       }
-      renderUserDashboard();
+      
+      if (targetUser) {
+        loadMembers(); // Refresh list to see new status
+      } else {
+        renderUserDashboard();
+      }
     } else {
       Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถบันทึกได้', 'error');
     }
@@ -79,6 +85,23 @@ async function performGPSAction(type) {
     } else {
       Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถระบุตำแหน่งได้', 'error');
     }
+  }
+}
+
+async function handleSuperAdminCheckInOut(username, fullName, type) {
+  const actionText = type === 'Check-in' ? 'ลงเวลาเข้างาน' : 'ลงเวลาออกงาน';
+  const r = await Swal.fire({
+    title: `ยืนยัน${actionText}?`,
+    html: `คุณกำลังทำรายการให้ <b>${escHtml(fullName)}</b><br><span style="font-size:0.85rem;color:var(--gray)">ระบบจะใช้พิกัดปัจจุบันของคุณในการบันทึก</span>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: type === 'Check-in' ? '#0ea5e9' : '#ef4444',
+    confirmButtonText: 'ยืนยัน',
+    cancelButtonText: 'ยกเลิก'
+  });
+  
+  if (r.isConfirmed) {
+    performGPSAction(type, { username, fullName });
   }
 }
 
@@ -410,6 +433,21 @@ function renderMemberList() {
           ${resetBtn}
           ${roleBtn}
         </div>
+        ${AppState.role === 'superadmin' ? `
+          <div class="member-actions super-actions" style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; display: flex; gap: 10px; width: 100%;">
+            ${!m.isWorking ? `
+              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-in')" 
+                class="btn-mini btn-mini-in">
+                <i class="fi fi-sr-fingerprint"></i> ลงเวลาเข้างาน
+              </button>
+            ` : `
+              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-out')" 
+                class="btn-mini btn-mini-out">
+                <i class="fi fi-rr-sign-out-alt"></i> ลงเวลาออกงาน
+              </button>
+            `}
+          </div>
+        ` : ''}
       </div>
     </div>`;
   }).join('') + '</div>';
