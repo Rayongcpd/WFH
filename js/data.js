@@ -286,10 +286,7 @@ async function loadAdminStats() {
     let stats = (res.stats || []);
     // Filter out superadmin from stats if not superadmin
     if (AppState.role !== 'superadmin') {
-      stats = stats.filter(s => {
-        const m = AppState.membersCache.find(x => x.username === s.username);
-        return m ? m.role !== 'superadmin' : true;
-      });
+      stats = stats.filter(s => s.role !== 'superadmin');
     }
 
     stats.sort((a, b) => {
