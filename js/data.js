@@ -25,26 +25,38 @@ async function handleCheckIn() {
 async function performGPSAction(type, targetUser = null) {
   showLoading(true);
   try {
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 15000, maximumAge: 0
-      });
-    });
+    let lat, lng, accuracy;
 
-    // Mock GPS Detection
-    if (pos.coords.accuracy === 0 || pos.coords.accuracy > 1500) {
-      showLoading(false);
-      Swal.fire('พิกัดผิดปกติ', 'ระบบตรวจพบความแม่นยำของ GPS ผิดปกติ (อาจเกิดจากการจำลองพิกัดหรือสัญญาณอ่อนมาก) กรุณาลองใหม่อีกครั้ง', 'warning');
-      return;
+    // If targetUser has forced coordinates (Home Location), use them
+    if (targetUser && targetUser.homeLat && targetUser.homeLng) {
+      lat = targetUser.homeLat;
+      lng = targetUser.homeLng;
+      accuracy = 'Manual (Admin)';
+    } else {
+      // Otherwise, request current GPS
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true, timeout: 15000, maximumAge: 0
+        });
+      });
+
+      if (pos.coords.accuracy === 0 || pos.coords.accuracy > 1500) {
+        showLoading(false);
+        Swal.fire('พิกัดผิดปกติ', 'ระบบตรวจพบความแม่นยำของ GPS ผิดปกติ กรุณาลองใหม่อีกครั้ง', 'warning');
+        return;
+      }
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      accuracy = pos.coords.accuracy;
     }
 
     const user = targetUser || AppState.currentUser;
     const payload = {
       username: user.username,
       fullName: user.fullName,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      accuracy: pos.coords.accuracy
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy
     };
 
     const action = type === 'Check-in' ? 'checkIn' : 'checkOut';
@@ -55,11 +67,7 @@ async function performGPSAction(type, targetUser = null) {
       if (type === 'Check-in' && res.locationStatus) {
         const isHome = res.locationStatus === 'at_home';
         const icon = isHome ? '🏠' : '⚠️';
-        const statusText = isHome
-          ? `อยู่ในพื้นที่บ้าน`
-          : res.locationStatus === 'outside'
-            ? `อยู่นอกพื้นที่บ้าน (${res.distFromHome}m)`
-            : 'ยังไม่ได้ตั้งค่าพิกัดบ้าน';
+        const statusText = isHome ? `อยู่ในพื้นที่บ้าน` : `อยู่นอกพื้นที่บ้าน (${res.distFromHome}m)`;
         Swal.fire({
           icon: isHome ? 'success' : 'warning',
           title: `${icon} เข้างานสำเร็จ`,
@@ -70,29 +78,26 @@ async function performGPSAction(type, targetUser = null) {
         showToast((targetUser ? `[${user.nickname || user.username}] ` : '') + (type === 'Check-in' ? 'เข้างานสำเร็จ' : 'ออกงานสำเร็จ'));
       }
       
-      if (targetUser) {
-        loadMembers(); // Refresh list to see new status
-      } else {
-        renderUserDashboard();
-      }
+      if (targetUser) loadMembers();
+      else renderUserDashboard();
     } else {
       Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถบันทึกได้', 'error');
     }
   } catch (err) {
     showLoading(false);
-    if (err.code === 1) {
-      Swal.fire('ไม่อนุญาต GPS', 'กรุณาเปิดการเข้าถึงตำแหน่งที่ตั้ง', 'error');
-    } else {
-      Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถระบุตำแหน่งได้', 'error');
-    }
+    Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถระบุตำแหน่งได้', 'error');
   }
 }
 
-async function handleSuperAdminCheckInOut(username, fullName, type) {
+async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = null, homeLng = null) {
   const actionText = type === 'Check-in' ? 'ลงเวลาเข้างาน' : 'ลงเวลาออกงาน';
+  const locationInfo = (homeLat && homeLng) 
+    ? `<span style="font-size:0.85rem;color:var(--success)">ระบบจะใช้ <b>พิกัดบ้าน</b> ของสมาชิกในการบันทึก</span>`
+    : `<span style="font-size:0.85rem;color:var(--warning)">สมาชิกยังไม่ตั้งพิกัดบ้าน ระบบจะใช้ <b>พิกัดปัจจุบันของคุณ</b> ในการบันทึก</span>`;
+
   const r = await Swal.fire({
     title: `ยืนยัน${actionText}?`,
-    html: `คุณกำลังทำรายการให้ <b>${escHtml(fullName)}</b><br><span style="font-size:0.85rem;color:var(--gray)">ระบบจะใช้พิกัดปัจจุบันของคุณในการบันทึก</span>`,
+    html: `คุณกำลังทำรายการให้ <b>${escHtml(fullName)}</b><br>${locationInfo}`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: type === 'Check-in' ? '#0ea5e9' : '#ef4444',
@@ -101,7 +106,7 @@ async function handleSuperAdminCheckInOut(username, fullName, type) {
   });
   
   if (r.isConfirmed) {
-    performGPSAction(type, { username, fullName });
+    performGPSAction(type, { username, fullName, homeLat, homeLng });
   }
 }
 
@@ -436,12 +441,12 @@ function renderMemberList() {
         ${AppState.role === 'superadmin' ? `
           <div class="member-actions super-actions" style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; display: flex; gap: 10px; width: 100%;">
             ${!m.isWorking ? `
-              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-in')" 
+              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-in', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
                 class="btn-mini btn-mini-in">
                 <i class="fi fi-sr-fingerprint"></i> ลงเวลาเข้างาน
               </button>
             ` : `
-              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-out')" 
+              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-out', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
                 class="btn-mini btn-mini-out">
                 <i class="fi fi-rr-sign-out-alt"></i> ลงเวลาออกงาน
               </button>
