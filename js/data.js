@@ -483,7 +483,6 @@ function renderMemberList() {
           ${editBtn}
           ${resetBtn}
           ${roleBtn}
-        </div>
       </div>
       </div>
     </div>`;
