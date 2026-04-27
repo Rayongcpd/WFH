@@ -439,16 +439,16 @@ function renderMemberList() {
           ${roleBtn}
         </div>
         ${AppState.role === 'superadmin' ? `
-          <div class="member-actions super-actions" style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; display: flex; gap: 10px; width: 100%;">
+          <div class="super-actions-wrap">
             ${!m.isWorking ? `
               <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-in', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
-                class="btn-mini btn-mini-in">
-                <i class="fi fi-sr-fingerprint"></i> ลงเวลาเข้างาน
+                class="sa-btn sa-btn-in">
+                <i class="fi fi-sr-fingerprint"></i> เข้างาน
               </button>
             ` : `
               <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-out', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
-                class="btn-mini btn-mini-out">
-                <i class="fi fi-rr-sign-out-alt"></i> ลงเวลาออกงาน
+                class="sa-btn sa-btn-out">
+                <i class="fi fi-rr-sign-out-alt"></i> ออกงาน
               </button>
             `}
           </div>
