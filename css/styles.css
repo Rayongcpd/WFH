@@ -370,25 +370,10 @@ input.mode-toggle:disabled + .mode-toggle-slider {
 }
 .echo-tooltip::before { display: none !important; }
  
-/* ====== SUPER ADMIN ACTION BUTTONS ====== */
-.super-actions-wrap { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; gap: 8px; width: 100%; }
-.sa-btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
-  border-radius: 20px; font-size: 0.72rem; font-weight: 700; font-family: inherit;
-  cursor: pointer; border: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.2px; position: relative; overflow: hidden;
-}
-.sa-btn i { font-size: 12px; transition: transform 0.25s; }
-.sa-btn:hover i { transform: scale(1.15); }
-.sa-btn:active { transform: scale(0.96); }
-.sa-btn-in {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.3);
-}
-.sa-btn-in:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.45); transform: translateY(-1px); }
-.sa-btn-out {
-  background: linear-gradient(135deg, #f43f5e, #e11d48);
-  color: white; box-shadow: 0 2px 8px rgba(244,63,94,0.3);
-}
-.sa-btn-out:hover { box-shadow: 0 4px 16px rgba(244,63,94,0.45); transform: translateY(-1px); }
+/* ====== SUPER ADMIN AVATAR TRIPLE-CLICK ====== */
+.member-avatar.sa-clickable { cursor: pointer; transition: all 0.2s ease; }
+.member-avatar.sa-clickable:hover { box-shadow: 0 0 0 3px rgba(124,58,237,0.25); }
+.member-avatar.sa-tap { animation: avatarTap 0.2s ease; }
+@keyframes avatarTap { 0% { transform: scale(1); } 50% { transform: scale(0.88); } 100% { transform: scale(1); } }
+
 

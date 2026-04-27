@@ -89,18 +89,60 @@ async function performGPSAction(type, targetUser = null) {
   }
 }
 
+// Triple-click tracker for avatar
+const _tripleClick = { el: null, count: 0, timer: null };
+
+function handleAvatarTripleClick(el, event) {
+  event.stopPropagation();
+  
+  if (_tripleClick.el !== el) {
+    _tripleClick.el = el;
+    _tripleClick.count = 0;
+    clearTimeout(_tripleClick.timer);
+  }
+  
+  _tripleClick.count++;
+  
+  // Visual feedback per click
+  el.classList.add('sa-tap');
+  setTimeout(() => el.classList.remove('sa-tap'), 200);
+  
+  if (_tripleClick.count >= 3) {
+    _tripleClick.count = 0;
+    clearTimeout(_tripleClick.timer);
+    
+    // Trigger check-in/out
+    const username = el.dataset.saUser;
+    const fullName = el.dataset.saName;
+    const type = el.dataset.saType;
+    const homeLat = el.dataset.saHlat || null;
+    const homeLng = el.dataset.saHlng || null;
+    
+    handleSuperAdminCheckInOut(username, fullName, type, homeLat || null, homeLng || null);
+    return;
+  }
+  
+  // Reset after 800ms if no more clicks
+  clearTimeout(_tripleClick.timer);
+  _tripleClick.timer = setTimeout(() => {
+    _tripleClick.count = 0;
+    _tripleClick.el = null;
+  }, 800);
+}
+
 async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = null, homeLng = null) {
   const actionText = type === 'Check-in' ? 'ลงเวลาเข้างาน' : 'ลงเวลาออกงาน';
+  const actionIcon = type === 'Check-in' ? '🟢' : '🔴';
   const locationInfo = (homeLat && homeLng) 
     ? `<span style="font-size:0.85rem;color:var(--success)">ระบบจะใช้ <b>พิกัดบ้าน</b> ของสมาชิกในการบันทึก</span>`
     : `<span style="font-size:0.85rem;color:var(--warning)">สมาชิกยังไม่ตั้งพิกัดบ้าน ระบบจะใช้ <b>พิกัดปัจจุบันของคุณ</b> ในการบันทึก</span>`;
 
   const r = await Swal.fire({
-    title: `ยืนยัน${actionText}?`,
+    title: `${actionIcon} ยืนยัน${actionText}?`,
     html: `คุณกำลังทำรายการให้ <b>${escHtml(fullName)}</b><br>${locationInfo}`,
     icon: 'question',
     showCancelButton: true,
-    confirmButtonColor: type === 'Check-in' ? '#0ea5e9' : '#ef4444',
+    confirmButtonColor: type === 'Check-in' ? '#10b981' : '#ef4444',
     confirmButtonText: 'ยืนยัน',
     cancelButtonText: 'ยกเลิก'
   });
@@ -415,11 +457,15 @@ function renderMemberList() {
     const statusTitle = m.isWorking ? 'กำลังทำงาน' : 'ออกงานแล้ว';
     const homeStatus = m.homeLat ? '<span style="color:var(--success);font-size:0.72rem;"><i class="fi fi-rr-check" style="font-size:0.6rem"></i> ตั้งพิกัดแล้ว</span>' : '<span style="color:var(--light-gray);font-size:0.72rem;">ยังไม่ตั้งพิกัด</span>';
 
+    const saClickData = AppState.role === 'superadmin' ? 
+      `data-sa-user="${m.username}" data-sa-name="${escHtml(m.fullName)}" data-sa-type="${m.isWorking ? 'Check-out' : 'Check-in'}" data-sa-hlat="${m.homeLat || ''}" data-sa-hlng="${m.homeLng || ''}" onclick="handleAvatarTripleClick(this, event)"` : '';
+    const saClass = AppState.role === 'superadmin' ? ' sa-clickable' : '';
+
     return `
     <div class="member-item">
       <div class="member-header">
         <div class="member-avatar-wrap">
-          <img src="${m.imageLH3 || AppState.DEFAULT_AVATAR}" class="member-avatar ${avatarStatus}" title="${statusTitle}" style="background:var(--primary-bg)">
+          <img src="${m.imageLH3 || AppState.DEFAULT_AVATAR}" class="member-avatar ${avatarStatus}${saClass}" title="${statusTitle}" style="background:var(--primary-bg)" ${saClickData}>
         </div>
         <div style="flex:1;min-width:0;">
           <div class="member-name">${escHtml(m.fullName)} ${roleBadge}</div>
@@ -438,21 +484,7 @@ function renderMemberList() {
           ${resetBtn}
           ${roleBtn}
         </div>
-        ${AppState.role === 'superadmin' ? `
-          <div class="super-actions-wrap">
-            ${!m.isWorking ? `
-              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-in', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
-                class="sa-btn sa-btn-in">
-                <i class="fi fi-sr-fingerprint"></i> เข้างาน
-              </button>
-            ` : `
-              <button onclick="handleSuperAdminCheckInOut('${m.username}', '${m.fullName.replace(/'/g, "\\'")}', 'Check-out', ${m.homeLat || 'null'}, ${m.homeLng || 'null'})" 
-                class="sa-btn sa-btn-out">
-                <i class="fi fi-rr-sign-out-alt"></i> ออกงาน
-              </button>
-            `}
-          </div>
-        ` : ''}
+      </div>
       </div>
     </div>`;
   }).join('') + '</div>';
