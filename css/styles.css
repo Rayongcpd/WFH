@@ -256,6 +256,8 @@ a { text-decoration:none; color:var(--primary); }
 .indv-table tbody tr:nth-child(even) td { background:var(--table-stripe); }
 .indv-table tbody tr:hover td { background:var(--table-hover); }
 .indv-th-center, .indv-table td:nth-child(4), .indv-table td:nth-child(5), .indv-table td:nth-child(6) { text-align:center; }
+.row-working td { background: var(--success-bg) !important; border-bottom-color: var(--success) !important; }
+.row-working:hover td { background: #d1fae5 !important; }
 
 /* ====== MODAL ====== */
 .modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
