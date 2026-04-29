@@ -551,34 +551,60 @@ async function openSetHomeLocation() {
     Swal.fire('แจ้งเตือน', 'คุณได้ตั้งพิกัดบ้านไปแล้ว หากต้องการเปลี่ยนแปลงกรุณาติดต่อ Admin', 'warning');
     return;
   }
-  const r = await Swal.fire({
-    title: '📍 ตั้งพิกัดบ้าน',
-    html: 'ระบบจะใช้ตำแหน่งปัจจุบันเป็นพิกัดบ้านของคุณ<br>ใช้สำหรับตรวจสอบว่าทำงานที่บ้านจริง',
-    icon: 'info', showCancelButton: true, confirmButtonText: 'ตั้งพิกัดเลย', cancelButtonText: 'ยกเลิก'
-  });
-  if (!r.isConfirmed) return;
 
   showLoading(true);
   try {
     const pos = await new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
     });
-    const res = await API.call('saveHomeLocation', {
-      id: AppState.currentUser.id,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      radius: 200
-    });
     showLoading(false);
-    if (res.success) {
-      AppState.currentUser.homeLat = pos.coords.latitude;
-      AppState.currentUser.homeLng = pos.coords.longitude;
-      Swal.fire({ icon: 'success', title: '🏠 บันทึกพิกัดบ้านสำเร็จ', timer: 2000, showConfirmButton: false });
-      renderUserDashboard();
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    const r = await Swal.fire({
+      title: '📍 ยืนยันพิกัดบ้าน',
+      html: `
+        <div style="font-size:0.9rem;margin-bottom:8px;color:var(--dark)">กรุณาตรวจสอบตำแหน่งของคุณบนแผนที่</div>
+        <div class="preview-map-wrap"><div id="homeMapPreview"></div></div>
+        <div style="font-size:0.8rem;color:var(--gray);margin-top:8px;">พิกัด: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึกพิกัดนี้',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: 'var(--primary)',
+      didOpen: () => {
+        const previewMap = L.map('homeMapPreview').setView([lat, lng], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(previewMap);
+        L.marker([lat, lng]).addTo(previewMap);
+        // Force refresh layout because it's in a modal
+        setTimeout(() => previewMap.invalidateSize(), 300);
+      }
+    });
+
+    if (r.isConfirmed) {
+      showLoading(true);
+      const res = await API.call('saveHomeLocation', {
+        id: AppState.currentUser.id,
+        lat: lat,
+        lng: lng,
+        radius: 200
+      });
+      showLoading(false);
+      if (res.success) {
+        AppState.currentUser.homeLat = lat;
+        AppState.currentUser.homeLng = lng;
+        Swal.fire({ icon: 'success', title: '🏠 บันทึกพิกัดบ้านสำเร็จ', timer: 2000, showConfirmButton: false });
+        renderUserDashboard();
+      } else {
+        Swal.fire('ผิดพลาด', res.message, 'error');
+      }
     }
   } catch (e) {
     showLoading(false);
-    Swal.fire('ผิดพลาด', 'ไม่สามารถระบุตำแหน่งได้', 'error');
+    Swal.fire('ผิดพลาด', 'ไม่สามารถระบุตำแหน่งได้ กรุณาเปิด GPS', 'error');
   }
 }
 
