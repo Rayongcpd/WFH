@@ -375,22 +375,25 @@ async function loadAdminStats() {
       return (a.fullName || '').localeCompare(b.fullName || '', 'th');
     });
 
-    let totalIn = 0, totalOut = 0;
-    stats.forEach(s => { totalIn += s.checkIn; totalOut += s.checkOut; });
-
     const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-    setVal('indvTotalIn', totalIn);
-    setVal('indvTotalOut', totalOut);
-    setVal('indvTotalMembers', stats.length);
+    // Use Today's Stats for cards
+    setVal('indvTotalIn', res.todayIn || 0);
+    setVal('indvTotalOut', res.todayOut || 0);
+    setVal('indvTotalMembers', res.totalMembers || stats.length);
 
     const tbody = document.getElementById('indvTableBody');
     if (tbody) {
-      tbody.innerHTML = stats.map((s, i) => `
+      tbody.innerHTML = stats.map((s, i) => {
+        const statusDot = s.isWorking ? '<div class="pulse-dot" style="width:8px;height:8px;display:inline-block;margin-right:6px"></div>' : '<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;display:inline-block;margin-right:6px"></div>';
+        return `
         <tr>
           <td style="text-align:center">${i + 1}</td>
           <td><div style="display:flex;align-items:center;gap:8px">
-            <img src="${s.image || AppState.DEFAULT_AVATAR}" style="width:30px;height:30px;border-radius:8px;object-fit:cover;background:var(--primary-bg)">
-            <div><div style="font-weight:600">${escHtml(s.fullName)}</div><div style="font-size:0.72rem;color:#94a3b8">${escHtml(s.department || '')}</div></div>
+            <div style="position:relative">
+              <img src="${s.image || AppState.DEFAULT_AVATAR}" style="width:30px;height:30px;border-radius:8px;object-fit:cover;background:var(--primary-bg)">
+              ${s.isWorking ? '<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--success);border:2px solid white;border-radius:50%"></div>' : ''}
+            </div>
+            <div><div style="font-weight:600;display:flex;align-items:center">${statusDot}${escHtml(s.fullName)}</div><div style="font-size:0.72rem;color:#94a3b8">${escHtml(s.department || '')}</div></div>
           </div></td>
           <td>${escHtml(s.department || '-')}</td>
           <td style="text-align:center;color:var(--success);font-weight:700">${s.checkIn}</td>
@@ -400,7 +403,8 @@ async function loadAdminStats() {
           <td style="font-size:0.78rem">${escHtml(s.lastIn || '-')}</td>
           <td style="font-size:0.78rem">${escHtml(s.lastOut || '-')}</td>
           <td style="text-align:center"><button onclick="printUserReport('${s.username}')" style="background:var(--primary-bg);border:none;color:var(--primary);padding:4px 8px;border-radius:6px;cursor:pointer;"><i class="fi fi-rr-print"></i></button></td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
     }
   } catch (e) { console.error('Admin stats error:', e); }
 }
