@@ -886,6 +886,42 @@ function previewSettingLogo(input) {
 // ============================================
 // REGISTER
 // ============================================
+function openConsentModal() {
+  const cb = document.getElementById('consentCheckbox');
+  const btn = document.getElementById('btnAcceptConsent');
+  if(cb) cb.checked = false;
+  if(btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+  }
+  openModal('consentModal');
+}
+
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'consentCheckbox') {
+    const btn = document.getElementById('btnAcceptConsent');
+    if(btn) {
+      if(e.target.checked) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      }
+    }
+  }
+});
+
+function acceptConsentAndRegister() {
+  closeModal('consentModal');
+  setTimeout(() => {
+    openRegisterModal();
+  }, 300); // Wait for modal transition to finish
+}
+
 function openRegisterModal() { openModal('registerModal'); }
 
 async function handleRegister(e) {
