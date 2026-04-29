@@ -941,7 +941,9 @@ async function handleRegister(e) {
       department: document.getElementById('regDept')?.value.trim(),
       phone: document.getElementById('regPhone').value.trim(),
       username: username,
-      password: document.getElementById('regPass').value
+      password: document.getElementById('regPass').value,
+      locationConsent: true,
+      consentTimestamp: new Date().toISOString()
     };
     const res = await API.call('register', data);
     showLoading(false);
