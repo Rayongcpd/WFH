@@ -454,7 +454,7 @@ function renderMemberList() {
     if (AppState.role === 'admin' || AppState.role === 'superadmin') {
       editBtn = `<button onclick="openMemberEditModal('${m.id}')" style="background:var(--card-bg);color:var(--gray);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:0.7rem;cursor:pointer" title="แก้ไขข้อมูล"><i class="fi fi-rr-edit"></i></button>`;
       if (m.homeLat) {
-        resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}')" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:3px 6px;font-size:0.7rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
+        resetBtn = `<button onclick="resetMemberHomeLocation('${m.id}', '${m.fullName.replace(/'/g, "\\'")}', ${m.homeLat}, ${m.homeLng})" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:3px 6px;font-size:0.7rem;cursor:pointer" title="รีเซ็ตพิกัด"><i class="fi fi-rr-refresh"></i></button>`;
       }
     }
 
@@ -494,13 +494,31 @@ function renderMemberList() {
   }).join('') + '</div>';
 }
 
-async function resetMemberHomeLocation(id, name) {
+async function resetMemberHomeLocation(id, name, lat, lng) {
   const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
   const r = await Swal.fire({
-    title: 'ยืนยันการรีเซ็ตพิกัด?',
-    html: `คุณต้องการรีเซ็ตพิกัดบ้านของ <b>${escHtml(name)}</b> ใช่หรือไม่?<br><span style="font-size:0.85rem;color:var(--gray)">หลังจากรีเซ็ต ${staffLabel}จะสามารถตั้งพิกัดใหม่ด้วยตัวเองได้อีกครั้ง</span>`,
-    icon: 'warning', showCancelButton: true, confirmButtonText: 'รีเซ็ตพิกัด', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ef4444'
+    title: '📍 ตรวจสอบพิกัดบ้าน',
+    html: `
+      <div style="font-size:0.9rem;margin-bottom:8px;color:var(--dark)">พิกัดบ้านปัจจุบันของ <b>${escHtml(name)}</b></div>
+      <div class="preview-map-wrap"><div id="resetMapPreview" style="height:100%;width:100%;z-index:0;"></div></div>
+      <div style="font-size:0.8rem;color:var(--gray);margin-top:8px;">พิกัด: ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
+      <div style="font-size:0.85rem;color:var(--danger);margin-top:12px;">หากพิกัดไม่ถูกต้อง สามารถกดปุ่มรีเซ็ตด้านล่าง เพื่อให้${staffLabel}ตั้งพิกัดใหม่ได้</div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fi fi-rr-refresh"></i> รีเซ็ตพิกัด',
+    cancelButtonText: 'ปิด',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#94a3b8',
+    didOpen: () => {
+      const previewMap = L.map('resetMapPreview').setView([lat, lng], 17);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(previewMap);
+      L.marker([lat, lng]).addTo(previewMap);
+      setTimeout(() => previewMap.invalidateSize(), 300);
+    }
   });
+
   if (!r.isConfirmed) return;
   showLoading(true);
   try {
