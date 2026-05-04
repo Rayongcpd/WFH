@@ -85,23 +85,36 @@ function showToast(msg, type = 'success') {
 // AUTH
 // ============================================
 async function checkAutoLogin() {
-  // Load config first
-  try {
-    const res = await API.call('getConfig', {}, 'GET');
+  // Load config in background
+  API.call('getConfig', {}, 'GET').then(res => {
     if (res.success) { AppState.configCache = res.config; applyConfig(res.config); }
-  } catch (e) { }
+  }).catch(()=>{});
 
   const saved = localStorage.getItem('wfh_session');
   if (saved) {
     try {
-      const { u, p } = JSON.parse(saved);
+      const { u, p, profile } = JSON.parse(saved);
       if (u && p) {
-        showLoading(true);
-        try {
-          const res = await API.call('login', { username: u, password: p });
-          if (res.success) { await finalizeLogin(res.profile, u, p); return; }
-        } catch (e) { }
-        localStorage.removeItem('wfh_session');
+        if (profile) {
+          // Instant Login from Cache
+          finalizeLogin(profile, u, p);
+          // Verify in background
+          API.call('login', { username: u, password: p }).then(res => {
+            if (!res.success) { logout(); }
+            else {
+              localStorage.setItem('wfh_session', JSON.stringify({ u, p, profile: res.profile }));
+            }
+          }).catch(()=>{});
+          return;
+        } else {
+          // Legacy format, do normal login
+          showLoading(true);
+          try {
+            const res = await API.call('login', { username: u, password: p });
+            if (res.success) { await finalizeLogin(res.profile, u, p); return; }
+          } catch (e) { }
+          localStorage.removeItem('wfh_session');
+        }
       }
     } catch (e) { localStorage.removeItem('wfh_session'); }
   }
@@ -115,19 +128,26 @@ async function handleLogin(e) {
   const p = document.getElementById('pass').value.trim();
   if (!u || !p) { Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning'); return; }
 
-  showLoading(true);
+  const btn = e.target.querySelector('button[type="submit"]');
+  const oldText = btn.innerHTML;
+  btn.innerHTML = '<i class="fi fi-rr-spinner" style="animation:spin 1s linear infinite; margin-right:6px"></i> กำลังเข้าสู่ระบบ...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
   try {
     const res = await API.call('login', { username: u, password: p });
     if (res.success) {
       await finalizeLogin(res.profile, u, p);
       showToast('เข้าสู่ระบบสำเร็จ');
     } else {
-      showLoading(false);
       Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
     }
   } catch (err) {
-    showLoading(false);
     Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถเชื่อมต่อได้', 'error');
+  } finally {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+    btn.style.opacity = '1';
   }
 }
 
@@ -137,11 +157,6 @@ async function finalizeLogin(profile, username, password) {
   AppState.isAdmin = ['admin', 'subadmin', 'superadmin'].includes(AppState.role);
   AppState.isSuperAdmin = AppState.role === 'superadmin';
 
-  try {
-    const res = await API.call('getConfig', {}, 'GET');
-    if (res.success) { AppState.configCache = res.config; applyConfig(res.config); }
-  } catch (e) { }
-
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
 
@@ -149,7 +164,7 @@ async function finalizeLogin(profile, username, password) {
   await loadMembers();
   switchTab('home');
 
-  localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password }));
+  localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password, profile: profile }));
   showLoading(false);
 }
 
