@@ -158,8 +158,7 @@ async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = nu
 async function renderUserDashboard() {
   if (!AppState.currentUser) return;
 
-  // Show skeleton for action area and recent list
-  showSkeleton('dashActionArea', Skeleton.actionBtn());
+  // Show skeleton for recent list only (action button uses spin loader)
   showSkeleton('dashRecentList', Skeleton.timeline(3));
 
   const nickEl = document.getElementById('dashNick');
