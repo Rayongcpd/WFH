@@ -157,6 +157,7 @@ async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = nu
 // ============================================
 async function renderUserDashboard() {
   if (!AppState.currentUser) return;
+  showLoading(true);
 
   const nickEl = document.getElementById('dashNick');
   const nameEl = document.getElementById('dashFullName');
@@ -189,6 +190,7 @@ async function renderUserDashboard() {
 
   try {
     const data = await API.call('getPersonalStats', { username: AppState.currentUser.username, requestorUsername: AppState.currentUser.username }, 'GET');
+    showLoading(false);
     if (!data.success) return;
 
     const si = document.getElementById('dashStatIn');
@@ -200,7 +202,7 @@ async function renderUserDashboard() {
     AppState.latestLog = lastLog;
     renderActionArea(lastLog);
     renderDashboardRecent(data.recentLogs);
-  } catch (e) { console.error('Dashboard error:', e); }
+  } catch (e) { showLoading(false); console.error('Dashboard error:', e); }
 }
 
 function renderActionArea(lastLog) {
@@ -266,8 +268,10 @@ function renderDashboardRecent(logs) {
 // USER STATS
 // ============================================
 async function loadUserStats() {
+  showLoading(true);
   try {
     const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
+    showLoading(false);
     if (!data.success) return;
 
     const si = document.getElementById('statInTotal');
@@ -300,7 +304,7 @@ async function loadUserStats() {
     AppState.myStatsPage = 1;
     renderMyStatsPage();
 
-  } catch (e) { console.error('Stats error:', e); }
+  } catch (e) { showLoading(false); console.error('Stats error:', e); }
 }
 
 function renderMyStatsPage() {
@@ -349,8 +353,10 @@ function renderMyStatsPage() {
 // ADMIN STATS
 // ============================================
 async function loadAdminStats() {
+  showLoading(true);
   try {
     const res = await API.call('getAllStats', {}, 'GET');
+    showLoading(false);
     if (!res.success) return;
 
     let stats = (res.stats || []);
@@ -407,7 +413,7 @@ async function loadAdminStats() {
         </tr>`;
       }).join('');
     }
-  } catch (e) { console.error('Admin stats error:', e); }
+  } catch (e) { showLoading(false); console.error('Admin stats error:', e); }
 }
 
 // ============================================
@@ -692,12 +698,14 @@ async function loadDailyPlans(targetDate) {
   const dateTextEl = document.getElementById('selectedPlanDateText');
   if (dateTextEl) dateTextEl.textContent = `แผนงานประจำวันที่ ${dateDisplay}`;
 
+  showLoading(true);
   try {
     const res = await API.call('getDailyPlans', { 
       date: date, 
       username: AppState.currentUser.username,
       role: AppState.role
     }, 'GET');
+    showLoading(false);
     const el = document.getElementById('plansList');
     if (!el) return;
     
@@ -739,7 +747,7 @@ async function loadDailyPlans(targetDate) {
         ${p.note ? `<div class="plan-note">${escHtml(p.note)}</div>` : ''}
       </div>`;
     }).join('');
-  } catch (e) { console.error('Plans error:', e); }
+  } catch (e) { showLoading(false); console.error('Plans error:', e); }
 }
 
 function openPlanModal(planId = '') {
@@ -815,8 +823,10 @@ async function deletePlan(id) {
 // SETTINGS (Admin)
 // ============================================
 async function loadSettingsForm() {
+  showLoading(true);
   try {
     const res = await API.call('getConfig', {}, 'GET');
+    showLoading(false);
     if (!res.success) return;
     const cfg = res.config;
     const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
@@ -834,7 +844,7 @@ async function loadSettingsForm() {
     if (logoPreview && cfg.org_logo) {
       logoPreview.innerHTML = `<img src="${cfg.org_logo}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=fi fi-sr-home style=font-size:20px;color:var(--primary)></i>'">`;
     }
-  } catch (e) { }
+  } catch (e) { showLoading(false); }
 }
 
 async function handleSaveSettings(e) {
@@ -1200,12 +1210,14 @@ async function printUserReport(username) {
 // ============================================
 async function loadSuperControlPanel() {
   if (!AppState.isSuperAdmin) return;
+  showLoading(true);
   const el = document.getElementById('superControlContent');
   if (!el) return;
   el.innerHTML = Array(4).fill('<div class="skeleton-item"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>').join('');
 
   try {
     const res = await API.call('getMembers', {}, 'GET');
+    showLoading(false);
     if (!res.success) return;
     const members = (res.items || []).filter(m => m.role !== 'superadmin').sort((a, b) => {
       const getPrio = (m) => {
@@ -1296,6 +1308,7 @@ async function loadSuperControlPanel() {
       </div>
     `;
   } catch (e) {
+    showLoading(false);
     el.innerHTML = '<div style="padding:24px;color:var(--danger);">เกิดข้อผิดพลาด: ' + escHtml(e.message) + '</div>';
   }
 }

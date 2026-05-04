@@ -85,35 +85,22 @@ function showToast(msg, type = 'success') {
 // AUTH
 // ============================================
 async function checkAutoLogin() {
-  // Load config in background
-  API.call('getConfig', {}, 'GET').then(res => {
-    if (res.success) { AppState.configCache = res.config; applyConfig(res.config); }
-  }).catch(()=>{});
+  showLoading(true);
+  // Load config
+  try {
+    const cfgRes = await API.call('getConfig', {}, 'GET');
+    if (cfgRes.success) { AppState.configCache = cfgRes.config; applyConfig(cfgRes.config); }
+  } catch(e){}
 
   const saved = localStorage.getItem('wfh_session');
   if (saved) {
     try {
-      const { u, p, profile } = JSON.parse(saved);
+      const { u, p } = JSON.parse(saved);
       if (u && p) {
-        if (profile) {
-          // Instant Login from Cache
-          finalizeLogin(profile, u, p);
-          // Verify in background
-          API.call('login', { username: u, password: p }).then(res => {
-            if (!res.success) { logout(); }
-            else {
-              localStorage.setItem('wfh_session', JSON.stringify({ u, p, profile: res.profile }));
-            }
-          }).catch(()=>{});
+        const res = await API.call('login', { username: u, password: p });
+        if (res.success) {
+          await finalizeLogin(res.profile, u, p);
           return;
-        } else {
-          // Legacy format, do normal login
-          showLoading(true);
-          try {
-            const res = await API.call('login', { username: u, password: p });
-            if (res.success) { await finalizeLogin(res.profile, u, p); return; }
-          } catch (e) { }
-          localStorage.removeItem('wfh_session');
         }
       }
     } catch (e) { localStorage.removeItem('wfh_session'); }
@@ -335,8 +322,10 @@ function switchTab(tab) {
 // MEMBERS
 // ============================================
 async function loadMembers() {
+  showLoading(true);
   try {
     const res = await API.call('getMembers', {}, 'GET');
+    showLoading(false);
     if (res.success) {
       let items = res.items || [];
       // Filter out superadmin if current user is not superadmin
@@ -368,15 +357,17 @@ async function loadMembers() {
       if (AppState.isAdmin && typeof renderMemberList === 'function') renderMemberList();
       if (AppState.isAdmin && typeof updateAdminStats === 'function') updateAdminStats();
     }
-  } catch (e) { console.error('loadMembers:', e); }
+  } catch (e) { showLoading(false); console.error('loadMembers:', e); }
 }
 
 // ============================================
 // ADMIN DASHBOARD
 // ============================================
 async function loadAdminDashboard() {
+  showLoading(true);
   try {
     const res = await API.call('getTodayStats', {}, 'GET');
+    showLoading(false);
     if (res.success) {
       const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
       const validMembers = AppState.membersCache.filter(m => !['admin', 'subadmin', 'superadmin'].includes(m.role));
@@ -393,7 +384,7 @@ async function loadAdminDashboard() {
       const bar = document.getElementById('dutyProgressFill');
       if (bar) bar.style.width = pct + '%';
     }
-  } catch (e) { }
+  } catch (e) { showLoading(false); }
 }
 
 // ============================================
