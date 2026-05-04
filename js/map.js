@@ -4,7 +4,17 @@
 let wfhMap = null;
 let wfhMarkers = [];
 
-function initMap() {
+async function initMap() {
+  // Lazy-load Leaflet if not already loaded
+  if (typeof L === 'undefined') {
+    try {
+      await LazyLoader.loadLeaflet();
+    } catch (e) {
+      console.error('Failed to load Leaflet:', e);
+      return;
+    }
+  }
+
   if (wfhMap) { wfhMap.invalidateSize(); return; }
   const container = document.getElementById('map');
   if (!container) return;

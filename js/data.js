@@ -280,24 +280,30 @@ async function loadUserStats() {
     if (si) si.textContent = data.totalCheckIn || 0;
     if (so) so.textContent = data.totalCheckOut || 0;
 
-    // Chart
-    if (typeof Chart !== 'undefined' && data.chartLabels) {
-      const ctx = document.getElementById('statsChart')?.getContext('2d');
-      if (ctx) {
-        if (window._statsChart) window._statsChart.destroy();
-        window._statsChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: data.chartLabels,
-            datasets: [
-              { label: 'เข้างาน', data: data.chartDataIn, backgroundColor: '#0ea5e9', borderRadius: 6 },
-              { label: 'ออกงาน', data: data.chartDataOut, backgroundColor: '#f43f5e', borderRadius: 6 }
-            ]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
+    // Chart: lazy-load Chart.js on demand
+    const renderChart = async () => {
+      if (typeof Chart === 'undefined' && typeof LazyLoader !== 'undefined') {
+        try { await LazyLoader.loadChartJS(); } catch(e) { console.warn('Chart.js load failed:', e); }
       }
-    }
+      if (typeof Chart !== 'undefined' && data.chartLabels) {
+        const ctx = document.getElementById('statsChart')?.getContext('2d');
+        if (ctx) {
+          if (window._statsChart) window._statsChart.destroy();
+          window._statsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.chartLabels,
+              datasets: [
+                { label: 'เข้างาน', data: data.chartDataIn, backgroundColor: '#0ea5e9', borderRadius: 6 },
+                { label: 'ออกงาน', data: data.chartDataOut, backgroundColor: '#f43f5e', borderRadius: 6 }
+              ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+          });
+        }
+      }
+    };
+    renderChart();
 
     // History with Pagination
     const logs = data.recentLogs || [];
@@ -516,7 +522,11 @@ async function resetMemberHomeLocation(id, name, lat, lng) {
     cancelButtonText: 'ปิด',
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#94a3b8',
-    didOpen: () => {
+    didOpen: async () => {
+      // Lazy-load Leaflet for map preview
+      if (typeof L === 'undefined' && typeof LazyLoader !== 'undefined') {
+        await LazyLoader.loadLeaflet();
+      }
       const previewMap = L.map('resetMapPreview').setView([lat, lng], 17);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -598,7 +608,11 @@ async function openSetHomeLocation() {
       confirmButtonText: 'บันทึกพิกัดนี้',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: 'var(--primary)',
-      didOpen: () => {
+      didOpen: async () => {
+        // Lazy-load Leaflet for map preview
+        if (typeof L === 'undefined' && typeof LazyLoader !== 'undefined') {
+          await LazyLoader.loadLeaflet();
+        }
         const previewMap = L.map('homeMapPreview').setView([lat, lng], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap'
@@ -1217,9 +1231,15 @@ async function loadSuperControlPanel() {
   el.innerHTML = Skeleton.superControl(4);
 
   try {
-    const res = await API.call('getMembers', {}, 'GET');
-    if (!res.success) return;
-    const members = (res.items || []).filter(m => m.role !== 'superadmin').sort((a, b) => {
+    // Use cached members instead of duplicate API call
+    let members = AppState.membersCache;
+    if (!members || members.length === 0) {
+      // Fallback: fetch if cache is empty
+      const res = await API.call('getMembers', {}, 'GET');
+      if (!res.success) return;
+      members = res.items || [];
+    }
+    members = members.filter(m => m.role !== 'superadmin').sort((a, b) => {
       const getPrio = (m) => {
         const p = m.position || '';
         const d = m.department || '';

@@ -1,5 +1,5 @@
 /* WFH System - Design System */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700;800&display=swap');
+/* NOTE: Google Fonts loaded via <link preload> in index.html for better performance */
 
 :root {
   --primary: #0ea5e9; --primary-dark: #0284c7; --primary-bg: #f0f9ff;

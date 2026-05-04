@@ -86,25 +86,35 @@ function showToast(msg, type = 'success') {
 // ============================================
 async function checkAutoLogin() {
   showLoading(true);
-  // Load config
-  try {
-    const cfgRes = await API.call('getConfig', {}, 'GET');
-    if (cfgRes.success) { AppState.configCache = cfgRes.config; applyConfig(cfgRes.config); }
-  } catch(e){}
 
   const saved = localStorage.getItem('wfh_session');
+  let session = null;
   if (saved) {
-    try {
-      const { u, p } = JSON.parse(saved);
-      if (u && p) {
-        const res = await API.call('login', { username: u, password: p });
-        if (res.success) {
-          await finalizeLogin(res.profile, u, p);
-          return;
-        }
-      }
-    } catch (e) { localStorage.removeItem('wfh_session'); }
+    try { session = JSON.parse(saved); } catch(e) { localStorage.removeItem('wfh_session'); }
   }
+
+  // Run config + login in parallel for faster startup
+  const promises = [
+    API.call('getConfig', {}, 'GET').catch(() => null)
+  ];
+  if (session && session.u && session.p) {
+    promises.push(API.call('login', { username: session.u, password: session.p }).catch(() => null));
+  }
+
+  const [cfgRes, loginRes] = await Promise.all(promises);
+
+  // Apply config
+  if (cfgRes && cfgRes.success) {
+    AppState.configCache = cfgRes.config;
+    applyConfig(cfgRes.config);
+  }
+
+  // Handle login result
+  if (loginRes && loginRes.success) {
+    await finalizeLogin(loginRes.profile, session.u, session.p);
+    return;
+  }
+
   showLoading(false);
   document.getElementById('loginScreen').style.display = 'flex';
 }
@@ -148,8 +158,12 @@ async function finalizeLogin(profile, username, password) {
   document.getElementById('appScreen').style.display = 'block';
 
   applyRoleUI();
-  await loadMembers();
-  await switchTab('home');
+
+  // Load members + switch tab in parallel for faster dashboard render
+  await Promise.all([
+    loadMembers(),
+    switchTab('home')
+  ]);
 
   localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password, profile: profile }));
   showLoading(false);
@@ -298,7 +312,7 @@ async function switchTab(tab) {
     }
   } else if (tab === 'map') {
     document.getElementById('viewMap')?.classList.add('active');
-    setTimeout(() => { if (typeof initMap === 'function') initMap(); }, 200);
+    setTimeout(async () => { if (typeof initMap === 'function') await initMap(); }, 200);
   } else if (tab === 'stats') {
     document.getElementById('viewStats')?.classList.add('active');
     if (typeof loadUserStats === 'function') await loadUserStats();
@@ -368,6 +382,7 @@ async function loadAdminDashboard() {
   showSkeleton('adminHeroArea', Skeleton.hero());
   showSkeleton('adminStatArea', Skeleton.statCards(3));
   try {
+    // Wait for members to be cached if not yet available
     const res = await API.call('getTodayStats', {}, 'GET');
     if (res.success) {
       const validMembers = AppState.membersCache.filter(m => !['admin', 'subadmin', 'superadmin'].includes(m.role));
