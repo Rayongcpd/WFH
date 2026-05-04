@@ -157,7 +157,10 @@ async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = nu
 // ============================================
 async function renderUserDashboard() {
   if (!AppState.currentUser) return;
-  showLoading(true);
+
+  // Show skeleton for action area and recent list
+  showSkeleton('dashActionArea', Skeleton.actionBtn());
+  showSkeleton('dashRecentList', Skeleton.timeline(3));
 
   const nickEl = document.getElementById('dashNick');
   const nameEl = document.getElementById('dashFullName');
@@ -190,7 +193,6 @@ async function renderUserDashboard() {
 
   try {
     const data = await API.call('getPersonalStats', { username: AppState.currentUser.username, requestorUsername: AppState.currentUser.username }, 'GET');
-    showLoading(false);
     if (!data.success) return;
 
     const si = document.getElementById('dashStatIn');
@@ -202,7 +204,7 @@ async function renderUserDashboard() {
     AppState.latestLog = lastLog;
     renderActionArea(lastLog);
     renderDashboardRecent(data.recentLogs);
-  } catch (e) { showLoading(false); console.error('Dashboard error:', e); }
+  } catch (e) { console.error('Dashboard error:', e); }
 }
 
 function renderActionArea(lastLog) {
@@ -268,10 +270,10 @@ function renderDashboardRecent(logs) {
 // USER STATS
 // ============================================
 async function loadUserStats() {
-  showLoading(true);
+  // Show skeleton for stats list
+  showSkeleton('myStatsList', Skeleton.statsList(4));
   try {
     const data = await API.call('getPersonalStats', { username: AppState.currentUser.username }, 'GET');
-    showLoading(false);
     if (!data.success) return;
 
     const si = document.getElementById('statInTotal');
@@ -304,7 +306,7 @@ async function loadUserStats() {
     AppState.myStatsPage = 1;
     renderMyStatsPage();
 
-  } catch (e) { showLoading(false); console.error('Stats error:', e); }
+  } catch (e) { console.error('Stats error:', e); }
 }
 
 function renderMyStatsPage() {
@@ -353,10 +355,10 @@ function renderMyStatsPage() {
 // ADMIN STATS
 // ============================================
 async function loadAdminStats() {
-  showLoading(true);
+  // Show skeleton for admin table
+  showSkeleton('indvTableBody', `<tr><td colspan="10" style="padding:0">${Skeleton.adminTable(5)}</td></tr>`);
   try {
     const res = await API.call('getAllStats', {}, 'GET');
-    showLoading(false);
     if (!res.success) return;
 
     let stats = (res.stats || []);
@@ -413,7 +415,7 @@ async function loadAdminStats() {
         </tr>`;
       }).join('');
     }
-  } catch (e) { showLoading(false); console.error('Admin stats error:', e); }
+  } catch (e) { console.error('Admin stats error:', e); }
 }
 
 // ============================================
@@ -698,14 +700,14 @@ async function loadDailyPlans(targetDate) {
   const dateTextEl = document.getElementById('selectedPlanDateText');
   if (dateTextEl) dateTextEl.textContent = `แผนงานประจำวันที่ ${dateDisplay}`;
 
-  showLoading(true);
+  // Show skeleton for plans
+  showSkeleton('plansList', Skeleton.planCards(2));
   try {
     const res = await API.call('getDailyPlans', { 
       date: date, 
       username: AppState.currentUser.username,
       role: AppState.role
     }, 'GET');
-    showLoading(false);
     const el = document.getElementById('plansList');
     if (!el) return;
     
@@ -747,7 +749,7 @@ async function loadDailyPlans(targetDate) {
         ${p.note ? `<div class="plan-note">${escHtml(p.note)}</div>` : ''}
       </div>`;
     }).join('');
-  } catch (e) { showLoading(false); console.error('Plans error:', e); }
+  } catch (e) { console.error('Plans error:', e); }
 }
 
 function openPlanModal(planId = '') {
@@ -1210,14 +1212,13 @@ async function printUserReport(username) {
 // ============================================
 async function loadSuperControlPanel() {
   if (!AppState.isSuperAdmin) return;
-  showLoading(true);
   const el = document.getElementById('superControlContent');
   if (!el) return;
-  el.innerHTML = Array(4).fill('<div class="skeleton-item"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>').join('');
+  // Show rich skeleton
+  el.innerHTML = Skeleton.superControl(4);
 
   try {
     const res = await API.call('getMembers', {}, 'GET');
-    showLoading(false);
     if (!res.success) return;
     const members = (res.items || []).filter(m => m.role !== 'superadmin').sort((a, b) => {
       const getPrio = (m) => {

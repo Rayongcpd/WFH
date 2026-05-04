@@ -322,10 +322,10 @@ async function switchTab(tab) {
 // MEMBERS
 // ============================================
 async function loadMembers() {
-  showLoading(true);
+  // Show member list skeleton
+  showSkeleton('memberList', Skeleton.memberCards(4));
   try {
     const res = await API.call('getMembers', {}, 'GET');
-    showLoading(false);
     if (res.success) {
       let items = res.items || [];
       // Filter out superadmin if current user is not superadmin
@@ -357,34 +357,61 @@ async function loadMembers() {
       if (AppState.isAdmin && typeof renderMemberList === 'function') renderMemberList();
       if (AppState.isAdmin && typeof updateAdminStats === 'function') updateAdminStats();
     }
-  } catch (e) { showLoading(false); console.error('loadMembers:', e); }
+  } catch (e) { console.error('loadMembers:', e); }
 }
 
 // ============================================
 // ADMIN DASHBOARD
 // ============================================
 async function loadAdminDashboard() {
-  showLoading(true);
+  // Show skeleton in hero and stat areas
+  showSkeleton('adminHeroArea', Skeleton.hero());
+  showSkeleton('adminStatArea', Skeleton.statCards(3));
   try {
     const res = await API.call('getTodayStats', {}, 'GET');
-    showLoading(false);
     if (res.success) {
-      const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
       const validMembers = AppState.membersCache.filter(m => !['admin', 'subadmin', 'superadmin'].includes(m.role));
       const validCount = validMembers.length;
+      const activeCount = res.activeCount || 0;
+      const offCount = validCount - activeCount;
+      const pct = validCount > 0 ? Math.round((activeCount / validCount) * 100) : 0;
 
-      setVal('execTotal', validCount);
-      setVal('execOnDuty', res.activeCount || 0);
-      setVal('execOffDuty', (validCount - (res.activeCount || 0)));
-      // Duty bar
-      const pct = validCount > 0 ? Math.round((res.activeCount / validCount) * 100) : 0;
-      setVal('dutyPercent', pct + '%');
-      setVal('dutyOnCount', res.activeCount || 0);
-      setVal('dutyOffCount', validCount - (res.activeCount || 0));
-      const bar = document.getElementById('dutyProgressFill');
-      if (bar) bar.style.width = pct + '%';
+      // Replace hero skeleton with real hero card
+      replaceSkeleton('adminHeroArea', `
+        <div class="hero-card">
+          <div class="hero-inner">
+            <div class="hero-welcome">สวัสดี 👋</div>
+            <div class="hero-name" id="adminWelcomeName">${escHtml(AppState.currentUser?.nickname || AppState.currentUser?.fullName || 'Admin')}</div>
+            <div class="duty-bar">
+              <div class="duty-bar-header"><span>อัตราเข้าทำงาน</span><span id="dutyPercent">${pct}%</span></div>
+              <div class="duty-progress"><div class="duty-progress-fill" id="dutyProgressFill" style="width:${pct}%"></div></div>
+              <div class="duty-bar-footer"><span>🟢 ทำงาน: <b id="dutyOnCount">${activeCount}</b></span><span>⚫ ออกงาน: <b id="dutyOffCount">${offCount}</b></span></div>
+            </div>
+          </div>
+        </div>`);
+
+      // Replace stat cards skeleton with real stat cards
+      const staffLabel = AppState.configCache?.staff_label || 'เจ้าหน้าที่';
+      replaceSkeleton('adminStatArea', `
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--primary-bg)"><i class="fi fi-rr-users" style="color:var(--primary);font-size:18px"></i></div>
+            <div class="stat-value" id="execTotal">${validCount}</div>
+            <div class="stat-label">${escHtml(staffLabel)}ทั้งหมด</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--success-bg)"><i class="fi fi-rr-laptop" style="color:var(--success);font-size:18px"></i></div>
+            <div class="stat-value" style="color:var(--success)" id="execOnDuty">${activeCount}</div>
+            <div class="stat-label">กำลังทำงาน</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#f1f5f9"><i class="fi fi-rr-moon" style="color:var(--light-gray);font-size:18px"></i></div>
+            <div class="stat-value" style="color:var(--light-gray)" id="execOffDuty">${offCount}</div>
+            <div class="stat-label">ออกงานแล้ว</div>
+          </div>
+        </div>`);
     }
-  } catch (e) { showLoading(false); }
+  } catch (e) { console.error('Admin dashboard error:', e); }
 }
 
 // ============================================
