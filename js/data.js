@@ -71,7 +71,7 @@ async function performGPSAction(type, targetUser = null) {
         Swal.fire({
           icon: isHome ? 'success' : 'warning',
           title: `${icon} เข้างานสำเร็จ`,
-          html: `<div style="font-size:0.9rem;color:#475569;">${statusText} (ทำรายการโดย Admin)</div>`,
+          html: `<div style="font-size:0.9rem;color:#475569;">${statusText}${targetUser ? ' (ทำรายการโดย Admin)' : ''}</div>`,
           timer: 2500, showConfirmButton: false
         });
       } else {
