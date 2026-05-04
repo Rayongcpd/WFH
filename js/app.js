@@ -149,7 +149,7 @@ async function finalizeLogin(profile, username, password) {
 
   applyRoleUI();
   await loadMembers();
-  switchTab('home');
+  await switchTab('home');
 
   localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password, profile: profile }));
   showLoading(false);
@@ -277,7 +277,7 @@ function updateSidebarUser() {
   if (img) img.src = AppState.currentUser.imageLH3 || AppState.DEFAULT_AVATAR;
 }
 
-function switchTab(tab) {
+async function switchTab(tab) {
   closeSidebar();
   document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-link-sidebar').forEach(el => el.classList.remove('active'));
@@ -291,30 +291,30 @@ function switchTab(tab) {
   if (tab === 'home') {
     if (AppState.isAdmin) {
       document.getElementById('viewHome')?.classList.add('active');
-      loadAdminDashboard();
+      await loadAdminDashboard();
     } else {
       document.getElementById('viewUserDashboard')?.classList.add('active');
-      renderUserDashboard();
+      await renderUserDashboard();
     }
   } else if (tab === 'map') {
     document.getElementById('viewMap')?.classList.add('active');
     setTimeout(() => { if (typeof initMap === 'function') initMap(); }, 200);
   } else if (tab === 'stats') {
     document.getElementById('viewStats')?.classList.add('active');
-    if (typeof loadUserStats === 'function') loadUserStats();
+    if (typeof loadUserStats === 'function') await loadUserStats();
   } else if (tab === 'adminStats') {
     document.getElementById('viewAdminStats')?.classList.add('active');
-    if (typeof loadAdminStats === 'function') loadAdminStats();
+    if (typeof loadAdminStats === 'function') await loadAdminStats();
   } else if (tab === 'settings') {
     document.getElementById('viewSettings')?.classList.add('active');
-    if (typeof loadSettingsForm === 'function') loadSettingsForm();
+    if (typeof loadSettingsForm === 'function') await loadSettingsForm();
   } else if (tab === 'plans') {
     document.getElementById('viewPlans')?.classList.add('active');
     if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof loadDailyPlans === 'function') loadDailyPlans();
+    if (typeof loadDailyPlans === 'function') await loadDailyPlans();
   } else if (tab === 'superControl') {
     document.getElementById('viewSuperControl')?.classList.add('active');
-    if (typeof loadSuperControlPanel === 'function') loadSuperControlPanel();
+    if (typeof loadSuperControlPanel === 'function') await loadSuperControlPanel();
   }
 }
 
