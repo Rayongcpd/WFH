@@ -145,7 +145,11 @@
               <h3><i class="fi fi-rr-users" style="color:var(--primary)"></i> รายชื่อ<span data-staff-label>เจ้าหน้าที่</span> <span id="memberCountBadge" style="font-size:0.72rem;color:var(--light-gray);font-weight:400"></span></h3>
             </div>
             <div class="card-body" id="memberList">
-              <div class="empty-state"><span>กำลังโหลด...</span></div>
+              <div class="member-card-grid">
+                <div class="member-item skeleton-card"><div class="member-header"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div><div class="member-body"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div>
+                <div class="member-item skeleton-card"><div class="member-header"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div><div class="member-body"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div>
+                <div class="member-item skeleton-card"><div class="member-header"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div><div class="member-body"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div>
+              </div>
             </div>
           </div>
         </section>
@@ -232,7 +236,10 @@
           <div class="card" style="margin-bottom:16px"><div class="card-body"><canvas id="statsChart" height="200"></canvas></div></div>
           <div class="card"><div class="card-header"><h3><i class="fi fi-rr-list" style="color:var(--primary)"></i> ประวัติการเข้า-ออกงาน</h3></div>
             <div class="card-body">
-              <div id="myStatsList"><div class="empty-state"><span>กำลังโหลด...</span></div></div>
+              <div id="myStatsList">
+                <div class="skeleton-item"><div class="skeleton skeleton-avatar" style="width:34px;height:34px"></div><div style="flex:1"><div class="skeleton skeleton-title" style="margin-bottom:6px"></div><div class="skeleton skeleton-text short"></div></div></div>
+                <div class="skeleton-item"><div class="skeleton skeleton-avatar" style="width:34px;height:34px"></div><div style="flex:1"><div class="skeleton skeleton-title" style="margin-bottom:6px"></div><div class="skeleton skeleton-text short"></div></div></div>
+              </div>
               <div id="myStatsPagination" style="display:flex;justify-content:center;gap:10px;margin-top:16px;"></div>
             </div>
           </div>
@@ -255,7 +262,11 @@
               <th style="width:48px;text-align:center">ลำดับ</th><th>ชื่อ - นามสกุล</th><th>กลุ่ม</th>
               <th class="indv-th-center">เข้า</th><th class="indv-th-center">ออก</th><th class="indv-th-center">มาสาย</th>
               <th>รวมเวลาทำงาน</th><th>เข้างานล่าสุด</th><th>ออกงานล่าสุด</th><th style="text-align:center">รายงาน</th>
-            </tr></thead><tbody id="indvTableBody"><tr><td colspan="10" style="text-align:center;padding:30px;color:var(--light-gray)">กำลังโหลด...</td></tr></tbody></table>
+            </tr></thead><tbody id="indvTableBody"><tr><td colspan="10" style="padding:0">
+              <div class="skeleton-item"><div class="skeleton skeleton-avatar" style="width:34px;height:34px"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>
+              <div class="skeleton-item"><div class="skeleton skeleton-avatar" style="width:34px;height:34px"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>
+              <div class="skeleton-item"><div class="skeleton skeleton-avatar" style="width:34px;height:34px"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>
+            </td></tr></tbody></table>
           </div></div>
         </section>
 
@@ -347,7 +358,8 @@
               </button>
             </div>
             <div class="card-body" id="superControlContent">
-              <div class="empty-state"><span>กำลังโหลด...</span></div>
+              <div class="skeleton-item"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>
+              <div class="skeleton-item"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>
             </div>
           </div>
         </section>

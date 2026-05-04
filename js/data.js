@@ -1202,7 +1202,7 @@ async function loadSuperControlPanel() {
   if (!AppState.isSuperAdmin) return;
   const el = document.getElementById('superControlContent');
   if (!el) return;
-  el.innerHTML = '<div style="padding:24px;text-align:center;"><i class="fi fi-rr-spinner"></i> กำลังโหลด...</div>';
+  el.innerHTML = Array(4).fill('<div class="skeleton-item"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div></div>').join('');
 
   try {
     const res = await API.call('getMembers', {}, 'GET');
