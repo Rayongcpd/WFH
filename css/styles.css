@@ -587,39 +587,67 @@ input.mode-toggle:disabled + .mode-toggle-slider {
 }
 .guide-slide {
   min-width: 100%;
-  padding: 30px 24px;
+  padding: 36px 24px;
   text-align: center;
-}
-.guide-slide img {
-  width: 220px;
-  height: 220px;
-  object-fit: contain;
-  margin-bottom: 20px;
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
-  animation: float 3s ease-in-out infinite;
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-.guide-content h4 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--dark);
-  margin-bottom: 12px;
-}
-.guide-content p {
-  font-size: 0.9rem;
-  color: var(--gray);
-  line-height: 1.6;
-}
-.guide-footer {
-  padding: 16px 24px 24px;
+  transition: background 0.5s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  border-top: 1px solid var(--border);
+}
+.guide-slide img {
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.12));
+  animation: float 4s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+
+/* Harmonious Backgrounds for Guide Steps */
+.guide-carousel[data-step="1"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.15), var(--modal-bg) 80%); }
+.guide-carousel[data-step="2"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(168, 85, 247, 0.15), var(--modal-bg) 80%); }
+.guide-carousel[data-step="3"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(244, 63, 94, 0.15), var(--modal-bg) 80%); }
+.guide-carousel[data-step="4"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.15), var(--modal-bg) 80%); }
+.guide-carousel[data-step="5"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.15), var(--modal-bg) 80%); }
+.guide-carousel[data-step="6"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(217, 70, 239, 0.15), var(--modal-bg) 80%); }
+
+[data-theme="dark"] .guide-carousel[data-step="1"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step="2"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(168, 85, 247, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step="3"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(244, 63, 94, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step="4"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step="5"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step="6"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(217, 70, 239, 0.1), var(--modal-bg) 80%); }
+.guide-content h4 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 12px;
+  transition: color 0.3s ease;
+}
+.guide-carousel[data-step="1"] .guide-content h4 { color: #4f46e5; }
+.guide-carousel[data-step="2"] .guide-content h4 { color: #9333ea; }
+.guide-carousel[data-step="3"] .guide-content h4 { color: #e11d48; }
+.guide-carousel[data-step="4"] .guide-content h4 { color: #059669; }
+.guide-carousel[data-step="5"] .guide-content h4 { color: #0284c7; }
+.guide-carousel[data-step="6"] .guide-content h4 { color: #c026d3; }
+
+.guide-content p {
+  font-size: 0.92rem;
+  color: var(--gray);
+  line-height: 1.7;
+  padding: 0 20px;
+}
+.guide-footer {
+  padding: 0 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 .guide-dots {
   display: flex;

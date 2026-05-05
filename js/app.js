@@ -494,8 +494,10 @@ function moveGuide(n) {
 }
 
 function updateGuideCarousel() {
+  const carousel = document.getElementById('guideCarousel');
   const slides = document.getElementById('guideSlides');
   if (slides) slides.style.transform = `translateX(-${currentGuideStep * 100}%)`;
+  if (carousel) carousel.setAttribute('data-step', currentGuideStep + 1);
 
   // Dots
   const dotsContainer = document.getElementById('guideDots');
