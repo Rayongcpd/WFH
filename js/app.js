@@ -244,6 +244,8 @@ function buildSidebarMenu() {
     h += menuItem('stats', 'fi fi-rr-chart-histogram', 'สถิติ');
     h += menuItem('map', 'fi fi-rr-map', 'แผนที่');
   }
+  h += '<div class="sidebar-menu-label" style="margin-top:16px;">ช่วยเหลือ</div>';
+  h += `<button class="nav-link-sidebar" onclick="openGuideModal()"><i class="fi fi-rr-interrogation"></i><span>แนะนำการใช้งาน</span></button>`;
   menu.innerHTML = h;
   menu.querySelector('.nav-link-sidebar')?.classList.add('active');
 }
@@ -470,4 +472,51 @@ function togglePassVis() {
   const icon = document.getElementById('togglePassIcon');
   if (p.type === 'password') { p.type = 'text'; icon.className = 'fi fi-rr-eye-crossed'; }
   else { p.type = 'password'; icon.className = 'fi fi-rr-eye'; }
+}
+
+// ============================================
+// GUIDE
+// ============================================
+let currentGuideStep = 0;
+const TOTAL_GUIDE_STEPS = 6;
+
+function openGuideModal() {
+  currentGuideStep = 0;
+  updateGuideCarousel();
+  openModal('guideModal');
+}
+
+function moveGuide(n) {
+  currentGuideStep += n;
+  if (currentGuideStep < 0) currentGuideStep = 0;
+  if (currentGuideStep >= TOTAL_GUIDE_STEPS) currentGuideStep = TOTAL_GUIDE_STEPS - 1;
+  updateGuideCarousel();
+}
+
+function updateGuideCarousel() {
+  const slides = document.getElementById('guideSlides');
+  if (slides) slides.style.transform = `translateX(-${currentGuideStep * 100}%)`;
+
+  // Dots
+  const dotsContainer = document.getElementById('guideDots');
+  if (dotsContainer) {
+    dotsContainer.innerHTML = Array.from({ length: TOTAL_GUIDE_STEPS }).map((_, i) => 
+      `<div class="guide-dot ${i === currentGuideStep ? 'active' : ''}"></div>`
+    ).join('');
+  }
+
+  // Buttons
+  const btnPrev = document.getElementById('btnPrevGuide');
+  const btnNext = document.getElementById('btnNextGuide');
+  const btnFinish = document.getElementById('btnFinishGuide');
+
+  if (btnPrev) btnPrev.style.visibility = currentGuideStep === 0 ? 'hidden' : 'visible';
+  
+  if (currentGuideStep === TOTAL_GUIDE_STEPS - 1) {
+    if (btnNext) btnNext.style.display = 'none';
+    if (btnFinish) btnFinish.style.display = 'flex';
+  } else {
+    if (btnNext) btnNext.style.display = 'flex';
+    if (btnFinish) btnFinish.style.display = 'none';
+  }
 }

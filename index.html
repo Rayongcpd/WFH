@@ -81,6 +81,11 @@
         <i class="fi fi-rr-key" style="margin-right:4px"></i> ลืมรหัสผ่าน
       </button>
     </div>
+    <div style="margin-top: 16px; text-align: center;">
+      <button onclick="openGuideModal()" style="background: none; border: none; color: var(--gray); font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto; padding: 8px 16px; border-radius: 12px; transition: all 0.2s;" onmouseover="this.style.color='var(--primary)'; this.style.background='var(--primary-bg)'" onmouseout="this.style.color='var(--gray)'; this.style.background='none'">
+        <i class="fi fi-rr-interrogation"></i> แนะนำการใช้งานระบบ
+      </button>
+    </div>
   </div>
 </div>
 
@@ -540,6 +545,84 @@
         <div class="form-group"><label>เบอร์โทร</label><input type="text" id="profPhone" class="form-input"></div>
         <button type="submit" class="btn-primary"><i class="fi fi-rr-disk" style="margin-right:6px"></i> บันทึกโปรไฟล์</button>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Guide Modal -->
+<div id="guideModal" class="modal-overlay" onclick="if(event.target===this)closeModal('guideModal')">
+  <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+      <h3><i class="fi fi-rr-info" style="margin-right:8px"></i> แนะนำการใช้งานระบบ</h3>
+      <button class="modal-close" onclick="closeModal('guideModal')"><i class="fi fi-rr-cross-small"></i></button>
+    </div>
+    <div class="modal-body" style="padding: 0;">
+      <div id="guideCarousel" class="guide-carousel">
+        <div class="guide-slides" id="guideSlides">
+          <!-- Slide 1 -->
+          <div class="guide-slide">
+            <img src="img/guide_setup.png" alt="Setup">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 1: ตั้งค่าการเชื่อมต่อ</h4>
+              <p>เมื่อเข้าใช้งานครั้งแรก ระบบจะให้ระบุ API URL ของ Google Apps Script เพื่อเชื่อมต่อกับฐานข้อมูลของหน่วยงาน</p>
+            </div>
+          </div>
+          <!-- Slide 2 -->
+          <div class="guide-slide">
+            <img src="img/guide_login.png" alt="Login">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 2: ลงทะเบียนและเข้าสู่ระบบ</h4>
+              <p>ผู้ใช้งานใหม่ต้องลงทะเบียนข้อมูลส่วนตัวและรอการอนุมัติ จากนั้นเข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้</p>
+            </div>
+          </div>
+          <!-- Slide 3 -->
+          <div class="guide-slide">
+            <img src="img/guide_location.png" alt="Location">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 3: ตั้งค่าพิกัดบ้าน</h4>
+              <p>ไปที่หน้าโปรไฟล์เพื่อตั้งค่า "พิกัดบ้าน" ระบบจะใช้พิกัดนี้ในการตรวจสอบว่าท่านทำงานจากที่บ้านจริงหรือไม่</p>
+            </div>
+          </div>
+          <!-- Slide 4 -->
+          <div class="guide-slide">
+            <img src="img/guide_plan.png" alt="Plan">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 4: บันทึกแผนงานประจำวัน</h4>
+              <p>ในแต่ละวัน ท่านต้องบันทึกแผนงานที่จะทำในระบบก่อน จึงจะสามารถกดลงเวลาเข้างานได้</p>
+            </div>
+          </div>
+          <!-- Slide 5 -->
+          <div class="guide-slide">
+            <img src="img/guide_checkin.png" alt="Checkin">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 5: ลงเวลาเข้า-ออกงาน</h4>
+              <p>เมื่ออยู่ในรัศมีพิกัดบ้าน ท่านสามารถกดปุ่ม "ลงเวลาเข้างาน" และ "ลงเวลาออกงาน" ได้ตามเวลาที่กำหนด</p>
+            </div>
+          </div>
+          <!-- Slide 6 -->
+          <div class="guide-slide">
+            <img src="img/guide_stats.png" alt="Stats">
+            <div class="guide-content">
+              <h4>ขั้นตอนที่ 6: ดูสถิติและประวัติ</h4>
+              <p>ท่านสามารถตรวจสอบสถิติเวลาทำงานย้อนหลัง และดูประวัติการเข้า-ออกงานของตนเองได้จาก Dashboard</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="guide-footer">
+        <div class="guide-dots" id="guideDots"></div>
+        <div class="guide-btns">
+          <button id="btnPrevGuide" class="btn-guide-nav" onclick="moveGuide(-1)" style="visibility: hidden;">
+            <i class="fi fi-rr-angle-small-left"></i> ย้อนกลับ
+          </button>
+          <button id="btnNextGuide" class="btn-guide-nav next" onclick="moveGuide(1)">
+            ถัดไป <i class="fi fi-rr-angle-small-right"></i>
+          </button>
+          <button id="btnFinishGuide" class="btn-guide-nav finish" onclick="closeModal('guideModal')" style="display: none;">
+            เริ่มต้นใช้งาน <i class="fi fi-rr-check"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -575,3 +575,102 @@ input.mode-toggle:disabled + .mode-toggle-slider {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* ====== GUIDE MODAL ====== */
+.guide-carousel {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.guide-slides {
+  display: flex;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.guide-slide {
+  min-width: 100%;
+  padding: 30px 24px;
+  text-align: center;
+}
+.guide-slide img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.guide-content h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 12px;
+}
+.guide-content p {
+  font-size: 0.9rem;
+  color: var(--gray);
+  line-height: 1.6;
+}
+.guide-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+}
+.guide-dots {
+  display: flex;
+  gap: 8px;
+}
+.guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s;
+}
+.guide-dot.active {
+  width: 24px;
+  border-radius: 4px;
+  background: var(--primary);
+}
+.guide-btns {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.btn-guide-nav {
+  background: none;
+  border: 1.5px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-guide-nav:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+.btn-guide-nav.next, .btn-guide-nav.finish {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+.btn-guide-nav.next:hover, .btn-guide-nav.finish:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
