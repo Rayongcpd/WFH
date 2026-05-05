@@ -133,6 +133,7 @@ async function handleLogin(e) {
 
   try {
     const res = await API.call('login', { username: u, password: p });
+    console.log('Login Response:', res);
     if (res.success) {
       await finalizeLogin(res.profile, u, p);
       showToast('เข้าสู่ระบบสำเร็จ');
