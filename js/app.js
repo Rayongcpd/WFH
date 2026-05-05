@@ -11,6 +11,7 @@ const AppState = {
   isAdmin: false,
   membersCache: [],
   configCache: null,
+  isFinalizing: false,
   latestLog: null,
   currentPage: 1,
   itemsPerPage: 20,
@@ -85,6 +86,7 @@ function showToast(msg, type = 'success') {
 // AUTH
 // ============================================
 async function checkAutoLogin() {
+  if (AppState.isFinalizing) return;
   showLoading(true);
 
   const saved = localStorage.getItem('wfh_session');
@@ -135,12 +137,15 @@ async function handleLogin(e) {
     const res = await API.call('login', { username: u, password: p });
     console.log('Login Response:', res);
     if (res.success) {
+      // Pass the button text to finalizeLogin to restore it if needed, 
+      // but usually finalizeLogin will switch screens.
       await finalizeLogin(res.profile, u, p);
       showToast('เข้าสู่ระบบสำเร็จ');
     } else {
       Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
     }
   } catch (err) {
+    console.error('Login Error:', err);
     Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถเชื่อมต่อได้', 'error');
   } finally {
     btn.innerHTML = oldText;
@@ -150,24 +155,34 @@ async function handleLogin(e) {
 }
 
 async function finalizeLogin(profile, username, password) {
-  AppState.currentUser = profile || {};
-  AppState.role = (profile.role || '').toLowerCase();
-  AppState.isAdmin = ['admin', 'subadmin', 'superadmin'].includes(AppState.role);
-  AppState.isSuperAdmin = AppState.role === 'superadmin';
+  if (AppState.isFinalizing) return;
+  AppState.isFinalizing = true;
 
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'block';
+  try {
+    AppState.currentUser = profile || {};
+    AppState.role = (profile.role || '').toLowerCase();
+    AppState.isAdmin = ['admin', 'subadmin', 'superadmin'].includes(AppState.role);
+    AppState.isSuperAdmin = AppState.role === 'superadmin';
 
-  applyRoleUI();
+    // 1. Load critical data first
+    await loadMembers();
 
-  // Load members + switch tab in parallel for faster dashboard render
-  await Promise.all([
-    loadMembers(),
-    switchTab('home')
-  ]);
+    // 2. Prepare the UI
+    applyRoleUI();
+    await switchTab('home');
 
-  localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password, profile: profile }));
-  showLoading(false);
+    // 3. Switch screens only after data is ready
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+
+    localStorage.setItem('wfh_session', JSON.stringify({ u: username, p: password, profile: profile }));
+  } catch (e) {
+    console.error('Finalize Login Error:', e);
+    throw e; // Rethrow to be caught by handleLogin or checkAutoLogin
+  } finally {
+    AppState.isFinalizing = false;
+    showLoading(false);
+  }
 }
 
 function logout() {
