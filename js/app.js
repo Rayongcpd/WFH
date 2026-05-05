@@ -122,7 +122,7 @@ async function checkAutoLogin() {
 async function handleLogin(e) {
   e.preventDefault();
   const u = document.getElementById('user').value.trim();
-  const p = document.getElementById('pass').value.trim();
+  const p = document.getElementById('pass').value;
   if (!u || !p) { Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning'); return; }
 
   const btn = e.target.querySelector('button[type="submit"]');
