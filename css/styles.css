@@ -587,41 +587,43 @@ input.mode-toggle:disabled + .mode-toggle-slider {
 }
 .guide-slide {
   min-width: 100%;
-  padding: 36px 24px;
+  padding: 40px 24px;
   text-align: center;
-  transition: background 0.5s ease;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 .guide-slide img {
-  width: 240px;
-  height: 240px;
+  width: 260px;
+  height: 260px;
   object-fit: contain;
   margin-bottom: 24px;
-  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.12));
+  filter: drop-shadow(0 15px 35px rgba(0,0,0,0.1));
   animation: float 4s ease-in-out infinite;
   z-index: 2;
+  /* Ultimate Blending: Fade edges of the image box */
+  -webkit-mask-image: radial-gradient(circle, black 55%, transparent 98%);
+  mask-image: radial-gradient(circle, black 55%, transparent 98%);
 }
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(1deg); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.02); }
 }
 
-/* Harmonious Backgrounds for Guide Steps */
-.guide-carousel[data-step="1"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.15), var(--modal-bg) 80%); }
-.guide-carousel[data-step="2"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(168, 85, 247, 0.15), var(--modal-bg) 80%); }
-.guide-carousel[data-step="3"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(244, 63, 94, 0.15), var(--modal-bg) 80%); }
-.guide-carousel[data-step="4"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.15), var(--modal-bg) 80%); }
-.guide-carousel[data-step="5"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.15), var(--modal-bg) 80%); }
-.guide-carousel[data-step="6"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(217, 70, 239, 0.15), var(--modal-bg) 80%); }
+/* Advanced Harmonious Backgrounds (Mesh-like Gradient) */
+.guide-carousel[data-step="1"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(99, 102, 241, 0.2), var(--modal-bg) 85%); }
+.guide-carousel[data-step="2"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(168, 85, 247, 0.2), var(--modal-bg) 85%); }
+.guide-carousel[data-step="3"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(244, 63, 94, 0.2), var(--modal-bg) 85%); }
+.guide-carousel[data-step="4"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.2), var(--modal-bg) 85%); }
+.guide-carousel[data-step="5"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(14, 165, 233, 0.2), var(--modal-bg) 85%); }
+.guide-carousel[data-step="6"] .guide-slide { background: radial-gradient(circle at 50% 40%, rgba(217, 70, 239, 0.2), var(--modal-bg) 85%); }
 
-[data-theme="dark"] .guide-carousel[data-step="1"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.1), var(--modal-bg) 80%); }
-[data-theme="dark"] .guide-carousel[data-step="2"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(168, 85, 247, 0.1), var(--modal-bg) 80%); }
-[data-theme="dark"] .guide-carousel[data-step="3"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(244, 63, 94, 0.1), var(--modal-bg) 80%); }
-[data-theme="dark"] .guide-carousel[data-step="4"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.1), var(--modal-bg) 80%); }
-[data-theme="dark"] .guide-carousel[data-step="5"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.1), var(--modal-bg) 80%); }
-[data-theme="dark"] .guide-carousel[data-step="6"] .guide-slide { background: radial-gradient(circle at 50% 35%, rgba(217, 70, 239, 0.1), var(--modal-bg) 80%); }
+[data-theme="dark"] .guide-carousel[data-step] .guide-slide { 
+  background-image: radial-gradient(circle at 50% 40%, var(--primary-bg), var(--modal-bg) 90%);
+}
 .guide-content h4 {
   font-size: 1.25rem;
   font-weight: 800;
@@ -629,12 +631,12 @@ input.mode-toggle:disabled + .mode-toggle-slider {
   margin-bottom: 12px;
   transition: color 0.3s ease;
 }
-.guide-carousel[data-step="1"] .guide-content h4 { color: #4f46e5; }
-.guide-carousel[data-step="2"] .guide-content h4 { color: #9333ea; }
-.guide-carousel[data-step="3"] .guide-content h4 { color: #e11d48; }
-.guide-carousel[data-step="4"] .guide-content h4 { color: #059669; }
-.guide-carousel[data-step="5"] .guide-content h4 { color: #0284c7; }
-.guide-carousel[data-step="6"] .guide-content h4 { color: #c026d3; }
+.guide-carousel[data-step="1"] .guide-content h4 { color: #6366f1; }
+.guide-carousel[data-step="2"] .guide-content h4 { color: #a855f7; }
+.guide-carousel[data-step="3"] .guide-content h4 { color: #f43f5e; }
+.guide-carousel[data-step="4"] .guide-content h4 { color: #10b981; }
+.guide-carousel[data-step="5"] .guide-content h4 { color: #0ea5e9; }
+.guide-carousel[data-step="6"] .guide-content h4 { color: #d946ef; }
 
 .guide-content p {
   font-size: 0.92rem;
