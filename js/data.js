@@ -1336,6 +1336,7 @@ async function loadSuperControlPanel() {
                     <input type="checkbox" class="mode-toggle" onchange="setAutoPilot('${m.id}', this.checked)" ${m.autoPilot ? 'checked' : ''} ${!hasHome ? 'disabled' : ''}>
                     <span class="mode-toggle-slider auto" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
                   </label>
+                  ${m.autoPilot ? `<div onclick="openAutoPilotDaysPicker('${m.id}')" style="margin-top:4px;cursor:pointer;font-size:0.62rem;color:#059669;font-weight:600;letter-spacing:0.5px;background:#ecfdf5;border-radius:4px;padding:1px 4px;display:inline-block;">${formatAutoPilotDays(m.autoPilotDays)}</div>` : ''}
                 </td>
               </tr>`;
             }).join('')}
@@ -1395,19 +1396,130 @@ async function setOriginEcho(targetUserId, enabled) {
   }
 }
 
-async function setAutoPilot(targetUserId, enabled) {
+function formatAutoPilotDays(days) {
+  if (!Array.isArray(days) || days.length === 0) return 'จ-ศ';
+  const map = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  if (days.length === 7) return 'ทุกวัน';
+  return days.map(d => map[d] || d).join(' ');
+}
+
+function openAutoPilotDaysPicker(targetUserId) {
+  const m = AppState.membersCache ? AppState.membersCache.find(x => x.id === targetUserId) : null;
+  const current = m && Array.isArray(m.autoPilotDays) ? m.autoPilotDays : [1,2,3,4,5];
+  const map = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const html = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;">
+      ${[0,1,2,3,4,5,6].map(i => `
+        <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border:1.5px solid ${current.includes(i) ? '#059669' : '#e5e7eb'};border-radius:8px;background:${current.includes(i) ? '#ecfdf5' : '#fff'};min-width:38px;" id="ap-day-${i}" onclick="toggleApDay(${i})">
+          <input type="checkbox" id="ap-chk-${i}" value="${i}" ${current.includes(i) ? 'checked' : ''} style="display:none;">
+          <span style="font-size:0.75rem;font-weight:700;color:${current.includes(i) ? '#059669' : '#9ca3af'};">${map[i]}</span>
+        </label>
+      `).join('')}
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+      <button type="button" onclick="apPreset([1,2,3,4,5])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">จ-ศ</button>
+      <button type="button" onclick="apPreset([0,1,2,3,4,5,6])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">ทุกวัน</button>
+      <button type="button" onclick="apPreset([])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">เคลียร์</button>
+    </div>
+  `;
+  window._apCurrentDays = [...current];
+  window._apTargetUserId = targetUserId;
+  Swal.fire({
+    title: 'กำหนดวันใช้งาน Auto Pilot',
+    html: html,
+    showCancelButton: true,
+    confirmButtonText: 'บันทึก',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#059669',
+    focusConfirm: false,
+    preConfirm: () => {
+      return window._apCurrentDays;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      saveAutoPilotDays(targetUserId, result.value);
+    }
+  });
+}
+
+window.toggleApDay = function(day) {
+  const idx = window._apCurrentDays.indexOf(day);
+  if (idx >= 0) {
+    window._apCurrentDays.splice(idx, 1);
+  } else {
+    window._apCurrentDays.push(day);
+  }
+  window._apCurrentDays.sort((a,b) => a-b);
+  const label = document.getElementById('ap-day-' + day);
+  const chk = document.getElementById('ap-chk-' + day);
+  if (label && chk) {
+    chk.checked = window._apCurrentDays.includes(day);
+    const on = chk.checked;
+    label.style.borderColor = on ? '#059669' : '#e5e7eb';
+    label.style.background = on ? '#ecfdf5' : '#fff';
+    label.querySelector('span').style.color = on ? '#059669' : '#9ca3af';
+  }
+};
+
+window.apPreset = function(days) {
+  window._apCurrentDays = [...days];
+  [0,1,2,3,4,5,6].forEach(i => {
+    const label = document.getElementById('ap-day-' + i);
+    const chk = document.getElementById('ap-chk-' + i);
+    if (label && chk) {
+      chk.checked = days.includes(i);
+      label.style.borderColor = days.includes(i) ? '#059669' : '#e5e7eb';
+      label.style.background = days.includes(i) ? '#ecfdf5' : '#fff';
+      label.querySelector('span').style.color = days.includes(i) ? '#059669' : '#9ca3af';
+    }
+  });
+};
+
+async function saveAutoPilotDays(targetUserId, days) {
   try {
-    const res = await API.call('toggleAutoPilot', {
+    const res = await API.call('setAutoPilotDays', {
       superadminUsername: AppState.currentUser.username,
       targetUserId: targetUserId,
-      enabled: enabled
+      days: days
     });
     if (res.success) {
       if (AppState.membersCache) {
         const m = AppState.membersCache.find(x => x.id === targetUserId);
-        if (m) m.autoPilot = enabled;
+        if (m) m.autoPilotDays = days;
+      }
+      showToast(res.message || 'บันทึกวันใช้งาน Auto Pilot สำเร็จ');
+      loadSuperControlPanel();
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function setAutoPilot(targetUserId, enabled) {
+  try {
+    const m = AppState.membersCache ? AppState.membersCache.find(x => x.id === targetUserId) : null;
+    let daysPayload = null;
+    if (enabled && m && (!m.autoPilotDays || m.autoPilotDays.length === 0)) {
+      daysPayload = [1,2,3,4,5];
+    }
+    const res = await API.call('toggleAutoPilot', {
+      superadminUsername: AppState.currentUser.username,
+      targetUserId: targetUserId,
+      enabled: enabled,
+      days: daysPayload
+    });
+    if (res.success) {
+      if (AppState.membersCache) {
+        const mem = AppState.membersCache.find(x => x.id === targetUserId);
+        if (mem) {
+          mem.autoPilot = enabled;
+          if (enabled && daysPayload) mem.autoPilotDays = daysPayload;
+        }
       }
       showToast(res.message || (enabled ? '⚡ เปิด Auto Pilot' : '⚡ ปิด Auto Pilot'));
+      loadSuperControlPanel();
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
       loadSuperControlPanel();
