@@ -351,6 +351,9 @@ input.mode-toggle:checked + .mode-toggle-slider.ghost {
 input.mode-toggle:checked + .mode-toggle-slider.echo {
   background: #b45309;
 }
+input.mode-toggle:checked + .mode-toggle-slider.auto {
+  background: #059669;
+}
 input.mode-toggle:checked + .mode-toggle-slider::before {
   transform: translateX(20px);
 }

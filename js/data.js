@@ -1272,6 +1272,13 @@ async function loadSuperControlPanel() {
             </div>
             <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">แผนที่แสดง<strong>พิกัดบ้าน</strong>แทนตำแหน่งจริงสำหรับทุกคน<br>SuperAdmin เห็นตำแหน่งจริง + เส้นสีเหลืองลากไปบ้าน</div>
           </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:1.1rem;">⚡</span>
+              <strong style="color:#059669;">Auto Pilot</strong>
+            </div>
+            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ทุกวัน<br>สุ่มเวลาเข้า 07:00-08:20 / ออก 16:30-17:30</div>
+          </div>
         </div>
       </div>
       <div style="overflow-x:auto;">
@@ -1286,6 +1293,9 @@ async function loadSuperControlPanel() {
               </th>
               <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">
                 <span style="color:#b45309;">🔮</span> Origin Echo
+              </th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">
+                <span style="color:#059669;">⚡</span> Auto Pilot
               </th>
             </tr>
           </thead>
@@ -1319,6 +1329,12 @@ async function loadSuperControlPanel() {
                   <label class="mode-toggle-wrap" title="Origin Echo${!hasHome ? ' (ต้องตั้งพิกัดบ้านก่อน)' : ''}">
                     <input type="checkbox" class="mode-toggle" onchange="setOriginEcho('${m.id}', this.checked)" ${m.originEcho ? 'checked' : ''} ${!hasHome ? 'disabled' : ''}>
                     <span class="mode-toggle-slider echo" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
+                  </label>
+                </td>
+                <td style="padding:10px 12px;text-align:center;">
+                  <label class="mode-toggle-wrap" title="Auto Pilot${!hasHome ? ' (ต้องตั้งพิกัดบ้านก่อน)' : ''}">
+                    <input type="checkbox" class="mode-toggle" onchange="setAutoPilot('${m.id}', this.checked)" ${m.autoPilot ? 'checked' : ''} ${!hasHome ? 'disabled' : ''}>
+                    <span class="mode-toggle-slider auto" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
                   </label>
                 </td>
               </tr>`;
@@ -1361,6 +1377,25 @@ async function setOriginEcho(targetUserId, enabled) {
     });
     if (res.success) {
       showToast(res.message || (enabled ? '🔮 เปิด Origin Echo' : '🔮 ปิด Origin Echo'));
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+      loadSuperControlPanel();
+    }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+    loadSuperControlPanel();
+  }
+}
+
+async function setAutoPilot(targetUserId, enabled) {
+  try {
+    const res = await API.call('toggleAutoPilot', {
+      superadminUsername: AppState.currentUser.username,
+      targetUserId: targetUserId,
+      enabled: enabled
+    });
+    if (res.success) {
+      showToast(res.message || (enabled ? '⚡ เปิด Auto Pilot' : '⚡ ปิด Auto Pilot'));
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
       loadSuperControlPanel();
