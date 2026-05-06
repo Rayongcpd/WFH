@@ -1408,22 +1408,49 @@ function openAutoPilotDaysPicker(targetUserId) {
   const current = m && Array.isArray(m.autoPilotDays) ? m.autoPilotDays : [1,2,3,4,5];
   const map = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const html = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;">
+    <div id="ap-days-container" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;">
       ${[0,1,2,3,4,5,6].map(i => `
-        <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border:1.5px solid ${current.includes(i) ? '#059669' : '#e5e7eb'};border-radius:8px;background:${current.includes(i) ? '#ecfdf5' : '#fff'};min-width:38px;" id="ap-day-${i}" onclick="toggleApDay(${i})">
-          <input type="checkbox" id="ap-chk-${i}" value="${i}" ${current.includes(i) ? 'checked' : ''} style="display:none;">
+        <div class="ap-day-btn" data-day="${i}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border:1.5px solid ${current.includes(i) ? '#059669' : '#e5e7eb'};border-radius:8px;background:${current.includes(i) ? '#ecfdf5' : '#fff'};min-width:38px;user-select:none;" id="ap-day-${i}">
           <span style="font-size:0.75rem;font-weight:700;color:${current.includes(i) ? '#059669' : '#9ca3af'};">${map[i]}</span>
-        </label>
+        </div>
       `).join('')}
     </div>
     <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
-      <button type="button" onclick="apPreset([1,2,3,4,5])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">จ-ศ</button>
-      <button type="button" onclick="apPreset([0,1,2,3,4,5,6])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">ทุกวัน</button>
-      <button type="button" onclick="apPreset([])" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">เคลียร์</button>
+      <button type="button" class="ap-preset" data-days="1,2,3,4,5" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">จ-ศ</button>
+      <button type="button" class="ap-preset" data-days="0,1,2,3,4,5,6" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">ทุกวัน</button>
+      <button type="button" class="ap-preset" data-days="" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">เคลียร์</button>
     </div>
   `;
   window._apCurrentDays = [...current];
   window._apTargetUserId = targetUserId;
+
+  function updateApDayUI() {
+    [0,1,2,3,4,5,6].forEach(i => {
+      const el = document.getElementById('ap-day-' + i);
+      if (!el) return;
+      const on = window._apCurrentDays.includes(i);
+      el.style.borderColor = on ? '#059669' : '#e5e7eb';
+      el.style.background = on ? '#ecfdf5' : '#fff';
+      el.querySelector('span').style.color = on ? '#059669' : '#9ca3af';
+    });
+  }
+
+  function apPreset(days) {
+    window._apCurrentDays = [...days];
+    updateApDayUI();
+  }
+
+  function toggleApDay(day) {
+    const idx = window._apCurrentDays.indexOf(day);
+    if (idx >= 0) {
+      window._apCurrentDays.splice(idx, 1);
+    } else {
+      window._apCurrentDays.push(day);
+    }
+    window._apCurrentDays.sort((a,b) => a-b);
+    updateApDayUI();
+  }
+
   Swal.fire({
     title: 'กำหนดวันใช้งาน Auto Pilot',
     html: html,
@@ -1432,6 +1459,24 @@ function openAutoPilotDaysPicker(targetUserId) {
     cancelButtonText: 'ยกเลิก',
     confirmButtonColor: '#059669',
     focusConfirm: false,
+    didOpen: () => {
+      const container = document.getElementById('ap-days-container');
+      if (container) {
+        container.addEventListener('click', function(e) {
+          const btn = e.target.closest('.ap-day-btn');
+          if (!btn) return;
+          const day = parseInt(btn.dataset.day, 10);
+          if (!isNaN(day)) toggleApDay(day);
+        });
+      }
+      document.querySelectorAll('.ap-preset').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const raw = this.dataset.days;
+          const days = raw === '' ? [] : raw.split(',').map(Number);
+          apPreset(days);
+        });
+      });
+    },
     preConfirm: () => {
       return window._apCurrentDays;
     }
@@ -1441,39 +1486,6 @@ function openAutoPilotDaysPicker(targetUserId) {
     }
   });
 }
-
-window.toggleApDay = function(day) {
-  const idx = window._apCurrentDays.indexOf(day);
-  if (idx >= 0) {
-    window._apCurrentDays.splice(idx, 1);
-  } else {
-    window._apCurrentDays.push(day);
-  }
-  window._apCurrentDays.sort((a,b) => a-b);
-  const label = document.getElementById('ap-day-' + day);
-  const chk = document.getElementById('ap-chk-' + day);
-  if (label && chk) {
-    chk.checked = window._apCurrentDays.includes(day);
-    const on = chk.checked;
-    label.style.borderColor = on ? '#059669' : '#e5e7eb';
-    label.style.background = on ? '#ecfdf5' : '#fff';
-    label.querySelector('span').style.color = on ? '#059669' : '#9ca3af';
-  }
-};
-
-window.apPreset = function(days) {
-  window._apCurrentDays = [...days];
-  [0,1,2,3,4,5,6].forEach(i => {
-    const label = document.getElementById('ap-day-' + i);
-    const chk = document.getElementById('ap-chk-' + i);
-    if (label && chk) {
-      chk.checked = days.includes(i);
-      label.style.borderColor = days.includes(i) ? '#059669' : '#e5e7eb';
-      label.style.background = days.includes(i) ? '#ecfdf5' : '#fff';
-      label.querySelector('span').style.color = days.includes(i) ? '#059669' : '#9ca3af';
-    }
-  });
-};
 
 async function saveAutoPilotDays(targetUserId, days) {
   try {
