@@ -360,6 +360,13 @@ function renderMyStatsPage() {
 // ADMIN STATS
 // ============================================
 async function loadAdminStats() {
+  // Set default date range to today
+  const today = new Date().toISOString().split('T')[0];
+  const startEl = document.getElementById('exportStartDate');
+  const endEl = document.getElementById('exportEndDate');
+  if (startEl && !startEl.value) startEl.value = today;
+  if (endEl && !endEl.value) endEl.value = today;
+
   // Show skeleton for admin table
   showSkeleton('indvTableBody', `<tr><td colspan="10" style="padding:0">${Skeleton.adminTable(5)}</td></tr>`);
   try {
@@ -1148,29 +1155,121 @@ async function submitProfileUpdate(imagePayload) {
 // EXPORT & PRINT
 // ============================================
 async function exportToCSV() {
+  const startDate = document.getElementById('exportStartDate')?.value;
+  const endDate = document.getElementById('exportEndDate')?.value;
+
+  if (!startDate || !endDate) {
+    Swal.fire('แจ้งเตือน', 'กรุณาเลือกช่วงวันที่ส่งออก', 'warning');
+    return;
+  }
+  if (new Date(startDate) > new Date(endDate)) {
+    Swal.fire('แจ้งเตือน', 'วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด', 'warning');
+    return;
+  }
+
   showLoading(true);
   try {
-    const res = await API.call('getExportData', {}, 'GET');
+    const res = await API.call('getExportData', { startDate, endDate }, 'GET');
     showLoading(false);
     if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
-    
+
     let csv = '\uFEFF'; // BOM for Excel Thai support
     csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,กลุ่ม,เวลาทำงานรวม,มาสาย\n';
-    
+
     const summary = res.dailySummary || [];
     const userMap = res.userMap || {};
-    
+
     summary.forEach((s, i) => {
       const u = userMap[s.username] || {};
       const lateTxt = s.isLate ? 'ใช่' : 'ไม่ใช่';
       csv += `${i+1},${s.date},${s.username},${u.fullName || '-'},${u.department || '-'},${s.workingHoursStr},${lateTxt}\n`;
     });
-    
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'WFH_Export_' + new Date().toISOString().split('T')[0] + '.csv';
+    link.download = 'WFH_Export_' + startDate + '_to_' + endDate + '.csv';
     link.click();
+  } catch (e) {
+    showLoading(false);
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function exportToPDF() {
+  const startDate = document.getElementById('exportStartDate')?.value;
+  const endDate = document.getElementById('exportEndDate')?.value;
+
+  if (!startDate || !endDate) {
+    Swal.fire('แจ้งเตือน', 'กรุณาเลือกช่วงวันที่ส่งออก', 'warning');
+    return;
+  }
+  if (new Date(startDate) > new Date(endDate)) {
+    Swal.fire('แจ้งเตือน', 'วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด', 'warning');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const res = await API.call('getExportData', { startDate, endDate }, 'GET');
+    showLoading(false);
+    if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
+
+    const summary = res.dailySummary || [];
+    const userMap = res.userMap || {};
+    const orgName = AppState.configCache?.app_name || 'WFH System';
+
+    const rows = summary.map((s, i) => {
+      const u = userMap[s.username] || {};
+      const lateTxt = s.isLate ? 'ใช่' : 'ไม่ใช่';
+      return `<tr>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${i + 1}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(s.date)}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(u.fullName || '-')}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(u.department || '-')}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.workingHoursStr)}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${lateTxt}</td>
+      </tr>`;
+    }).join('');
+
+    const w = window.open('', '_blank');
+    const html = `
+      <html>
+        <head>
+          <title>รายงานการเข้า-ออกงาน ${orgName}</title>
+          <style>
+            @page { size: A4 landscape; margin: 15mm; }
+            body { font-family: 'Sarabun', 'TH Sarabun New', sans-serif; padding: 20px; color: #1e293b; }
+            h2 { text-align: center; margin-bottom: 6px; }
+            .sub { text-align: center; color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+            th { border: 1px solid #94a3b8; padding: 10px; background: #f1f5f9; text-align: center; font-weight: 700; }
+            td { border: 1px solid #cbd5e1; }
+            .footer { margin-top: 20px; font-size: 0.8rem; color: #64748b; text-align: right; }
+          </style>
+        </head>
+        <body onload="window.print();">
+          <h2>รายงานการเข้า-ออกงานประจำวัน</h2>
+          <div class="sub">${orgName} &nbsp;|&nbsp; ช่วงวันที่: ${startDate} ถึง ${endDate}</div>
+          <table>
+            <thead>
+              <tr>
+                <th>ลำดับ</th>
+                <th>วันที่</th>
+                <th>ชื่อ-นามสกุล</th>
+                <th>กลุ่ม</th>
+                <th>เวลาทำงานรวม</th>
+                <th>มาสาย</th>
+              </tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:12px;">ไม่พบข้อมูล</td></tr>'}</tbody>
+          </table>
+          <div class="footer">พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}</div>
+        </body>
+      </html>
+    `;
+    w.document.write(html);
+    w.document.close();
   } catch (e) {
     showLoading(false);
     Swal.fire('ผิดพลาด', e.message, 'error');
