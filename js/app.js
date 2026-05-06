@@ -357,7 +357,7 @@ async function loadMembers() {
   // Show member list skeleton
   showSkeleton('memberList', Skeleton.memberCards(4));
   try {
-    const res = await API.call('getMembers', {}, 'GET');
+    const res = await API.call('getMembers', { requestorUsername: AppState.currentUser.username }, 'GET');
     if (res.success) {
       let items = res.items || [];
       // Filter out superadmin if current user is not superadmin

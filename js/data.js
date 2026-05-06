@@ -1344,7 +1344,7 @@ async function loadSuperControlPanel() {
     let members = AppState.membersCache;
     if (!members || members.length === 0) {
       // Fallback: fetch if cache is empty
-      const res = await API.call('getMembers', {}, 'GET');
+      const res = await API.call('getMembers', { requestorUsername: AppState.currentUser.username }, 'GET');
       if (!res.success) return;
       members = res.items || [];
     }
