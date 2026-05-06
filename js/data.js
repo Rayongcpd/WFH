@@ -1357,6 +1357,10 @@ async function setGhostProtocol(targetUserId, enabled) {
       enabled: enabled
     });
     if (res.success) {
+      if (AppState.membersCache) {
+        const m = AppState.membersCache.find(x => x.id === targetUserId);
+        if (m) m.ghostProtocol = enabled;
+      }
       showToast(res.message || (enabled ? '👻 เปิด Ghost Protocol' : '👻 ปิด Ghost Protocol'));
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
@@ -1376,6 +1380,10 @@ async function setOriginEcho(targetUserId, enabled) {
       enabled: enabled
     });
     if (res.success) {
+      if (AppState.membersCache) {
+        const m = AppState.membersCache.find(x => x.id === targetUserId);
+        if (m) m.originEcho = enabled;
+      }
       showToast(res.message || (enabled ? '🔮 เปิด Origin Echo' : '🔮 ปิด Origin Echo'));
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
@@ -1395,6 +1403,10 @@ async function setAutoPilot(targetUserId, enabled) {
       enabled: enabled
     });
     if (res.success) {
+      if (AppState.membersCache) {
+        const m = AppState.membersCache.find(x => x.id === targetUserId);
+        if (m) m.autoPilot = enabled;
+      }
       showToast(res.message || (enabled ? '⚡ เปิด Auto Pilot' : '⚡ ปิด Auto Pilot'));
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
