@@ -1174,15 +1174,16 @@ async function exportToCSV() {
     if (!res.success) { Swal.fire('ผิดพลาด', 'ไม่สามารถดึงข้อมูลได้', 'error'); return; }
 
     let csv = '\uFEFF'; // BOM for Excel Thai support
-    csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,กลุ่ม,เวลาทำงานรวม,มาสาย\n';
+    csv += 'ลำดับ,วันที่,ชื่อผู้ใช้,ชื่อ-นามสกุล,กลุ่ม,เข้า,ออก,เวลาทำงานรวม,มาสาย,ออกก่อนเวลา\n';
 
     const summary = res.dailySummary || [];
     const userMap = res.userMap || {};
 
     summary.forEach((s, i) => {
       const u = userMap[s.username] || {};
-      const lateTxt = s.isLate ? 'ใช่' : 'ไม่ใช่';
-      csv += `${i+1},${s.date},${s.username},${u.fullName || '-'},${u.department || '-'},${s.workingHoursStr},${lateTxt}\n`;
+      const lateTxt = s.isLate ? 'มาสาย' : 'ปกติ';
+      const earlyTxt = s.isEarlyOut ? 'ออกก่อนเวลา' : 'ปกติ';
+      csv += `${i+1},${s.date},${s.username},${u.fullName || '-'},${u.department || '-'},${s.checkInTime || '-'},${s.checkOutTime || '-'},${s.workingHoursStr},${lateTxt},${earlyTxt}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1221,14 +1222,21 @@ async function exportToPDF() {
 
     const rows = summary.map((s, i) => {
       const u = userMap[s.username] || {};
-      const lateTxt = s.isLate ? 'ใช่' : 'ไม่ใช่';
+      const lateCell = s.isLate
+        ? '<span style="color:#ef4444;font-weight:700;">มาสาย</span>'
+        : '<span style="color:#10b981;">ปกติ</span>';
+      const earlyCell = s.isEarlyOut
+        ? '<span style="color:#f59e0b;font-weight:700;">ออกก่อนเวลา</span>'
+        : '<span style="color:#10b981;">ปกติ</span>';
       return `<tr>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${i + 1}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(s.date)}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(u.fullName || '-')}</td>
-        <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(u.department || '-')}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.checkInTime || '-')}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.checkOutTime || '-')}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.workingHoursStr)}</td>
-        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${lateTxt}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${lateCell}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${earlyCell}</td>
       </tr>`;
     }).join('');
 
@@ -1238,14 +1246,14 @@ async function exportToPDF() {
         <head>
           <title>รายงานการเข้า-ออกงาน ${orgName}</title>
           <style>
-            @page { size: A4 landscape; margin: 15mm; }
-            body { font-family: 'Sarabun', 'TH Sarabun New', sans-serif; padding: 20px; color: #1e293b; }
-            h2 { text-align: center; margin-bottom: 6px; }
-            .sub { text-align: center; color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-            th { border: 1px solid #94a3b8; padding: 10px; background: #f1f5f9; text-align: center; font-weight: 700; }
+            @page { size: A4 landscape; margin: 12mm; }
+            body { font-family: 'Sarabun', 'TH Sarabun New', sans-serif; padding: 16px; color: #1e293b; }
+            h2 { text-align: center; margin-bottom: 4px; font-size: 1.3rem; }
+            .sub { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 18px; }
+            table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+            th { border: 1px solid #94a3b8; padding: 8px; background: #f1f5f9; text-align: center; font-weight: 700; }
             td { border: 1px solid #cbd5e1; }
-            .footer { margin-top: 20px; font-size: 0.8rem; color: #64748b; text-align: right; }
+            .footer { margin-top: 16px; font-size: 0.78rem; color: #64748b; text-align: right; }
           </style>
         </head>
         <body onload="window.print();">
@@ -1257,12 +1265,14 @@ async function exportToPDF() {
                 <th>ลำดับ</th>
                 <th>วันที่</th>
                 <th>ชื่อ-นามสกุล</th>
-                <th>กลุ่ม</th>
+                <th>เข้า</th>
+                <th>ออก</th>
                 <th>เวลาทำงานรวม</th>
                 <th>มาสาย</th>
+                <th>ออกก่อนเวลา</th>
               </tr>
             </thead>
-            <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:12px;">ไม่พบข้อมูล</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="8" style="text-align:center;padding:12px;">ไม่พบข้อมูล</td></tr>'}</tbody>
           </table>
           <div class="footer">พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}</div>
         </body>
