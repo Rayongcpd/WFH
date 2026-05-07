@@ -1448,7 +1448,7 @@ async function loadSuperControlPanel() {
                     <input type="checkbox" class="mode-toggle" onchange="setAutoPilot('${m.id}', this.checked)" ${m.autoPilot ? 'checked' : ''} ${!hasHome ? 'disabled' : ''}>
                     <span class="mode-toggle-slider auto" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
                   </label>
-                  ${m.autoPilot ? `<div onclick="openAutoPilotDaysPicker('${m.id}')" style="margin-top:4px;cursor:pointer;font-size:0.62rem;color:#059669;font-weight:600;letter-spacing:0.5px;background:#ecfdf5;border-radius:4px;padding:1px 4px;display:inline-block;">${formatAutoPilotDays(m.autoPilotDays)}</div>` : ''}
+                  ${m.autoPilot ? `<div onclick="openAutoPilotDatesPicker('${m.id}')" style="margin-top:4px;cursor:pointer;font-size:0.62rem;color:#059669;font-weight:600;letter-spacing:0.5px;background:#ecfdf5;border-radius:4px;padding:1px 4px;display:inline-block;">${formatAutoPilotDates(m.autoPilotDates)}</div>` : ''}
                 </td>
               </tr>`;
             }).join('')}
@@ -1508,63 +1508,88 @@ async function setOriginEcho(targetUserId, enabled) {
   }
 }
 
-function formatAutoPilotDays(days) {
-  if (!Array.isArray(days) || days.length === 0) return 'จ-ศ';
-  const map = ['อา','จ','อ','พ','พฤ','ศ','ส'];
-  if (days.length === 7) return 'ทุกวัน';
-  return days.map(d => map[d] || d).join(' ');
+function getBangkokIsoDate() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const bkk = new Date(utc + (7 * 3600000));
+  const y = bkk.getFullYear();
+  const m = String(bkk.getMonth() + 1).padStart(2, '0');
+  const d = String(bkk.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
 }
 
-function openAutoPilotDaysPicker(targetUserId) {
+function formatThaiDateFromIso(isoDate) {
+  if (!isoDate) return '';
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) return isoDate;
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return isoDate;
+  return String(d).padStart(2, '0') + '/' + String(m).padStart(2, '0') + '/' + (y + 543);
+}
+
+function formatAutoPilotDates(dates) {
+  if (!Array.isArray(dates) || dates.length === 0) {
+    return 'ยังไม่ได้เลือกวัน';
+  }
+  if (dates.length > 3) {
+    return formatThaiDateFromIso(dates[0]) + ' และอีก ' + (dates.length - 1) + ' วัน';
+  }
+  return dates.map(d => formatThaiDateFromIso(d)).join(', ');
+}
+
+function openAutoPilotDatesPicker(targetUserId) {
   const m = AppState.membersCache ? AppState.membersCache.find(x => x.id === targetUserId) : null;
-  const current = m && Array.isArray(m.autoPilotDays) ? m.autoPilotDays : [1,2,3,4,5];
-  const map = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const current = m && Array.isArray(m.autoPilotDates) ? m.autoPilotDates : [];
+  const todayIso = getBangkokIsoDate();
   const html = `
-    <div id="ap-days-container" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;">
-      ${[0,1,2,3,4,5,6].map(i => `
-        <div class="ap-day-btn" data-day="${i}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border:1.5px solid ${current.includes(i) ? '#059669' : '#e5e7eb'};border-radius:8px;background:${current.includes(i) ? '#ecfdf5' : '#fff'};min-width:38px;user-select:none;" id="ap-day-${i}">
-          <span style="font-size:0.75rem;font-weight:700;color:${current.includes(i) ? '#059669' : '#9ca3af'};">${map[i]}</span>
-        </div>
-      `).join('')}
+    <div style="text-align:center;margin-bottom:12px;">
+      <div style="font-size:0.75rem;color:#6b7280;">วันนี้: <span style="font-weight:600;color:#374151;">${formatThaiDateFromIso(todayIso)}</span> <span style="font-size:0.65rem;color:#9ca3af;">(${todayIso})</span></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+      <input type="date" id="ap-date-input" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:0.85rem;">
+      <button type="button" id="ap-add-date" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:0.8rem;cursor:pointer;">เพิ่ม</button>
+    </div>
+    <div id="ap-dates-list" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;min-height:28px;">
+      ${current.map(date => `<div class="ap-date-chip" data-date="${date}" style="display:flex;align-items:center;gap:4px;background:#ecfdf5;border:1.5px solid #059669;border-radius:6px;padding:3px 8px;font-size:0.75rem;color:#059669;font-weight:600;cursor:pointer;"><span>${formatThaiDateFromIso(date)}</span><span style="font-size:0.7rem;color:#ef4444;">✕</span></div>`).join('')}
     </div>
     <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
-      <button type="button" class="ap-preset" data-days="1,2,3,4,5" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">จ-ศ</button>
-      <button type="button" class="ap-preset" data-days="0,1,2,3,4,5,6" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">ทุกวัน</button>
-      <button type="button" class="ap-preset" data-days="" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">เคลียร์</button>
+      <button type="button" class="ap-preset" data-preset="today" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">วันนี้</button>
+      <button type="button" class="ap-preset" data-preset="clear" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;color:#374151;">ล้าง</button>
     </div>
   `;
-  window._apCurrentDays = [...current];
+  window._apCurrentDates = [...current];
   window._apTargetUserId = targetUserId;
 
-  function updateApDayUI() {
-    [0,1,2,3,4,5,6].forEach(i => {
-      const el = document.getElementById('ap-day-' + i);
-      if (!el) return;
-      const on = window._apCurrentDays.includes(i);
-      el.style.borderColor = on ? '#059669' : '#e5e7eb';
-      el.style.background = on ? '#ecfdf5' : '#fff';
-      el.querySelector('span').style.color = on ? '#059669' : '#9ca3af';
-    });
+  function updateApDatesUI() {
+    const container = document.getElementById('ap-dates-list');
+    if (!container) return;
+    container.innerHTML = window._apCurrentDates.map(date => `<div class="ap-date-chip" data-date="${date}" style="display:flex;align-items:center;gap:4px;background:#ecfdf5;border:1.5px solid #059669;border-radius:6px;padding:3px 8px;font-size:0.75rem;color:#059669;font-weight:600;cursor:pointer;"><span>${formatThaiDateFromIso(date)}</span><span style="font-size:0.7rem;color:#ef4444;">✕</span></div>`).join('');
   }
 
-  function apPreset(days) {
-    window._apCurrentDays = [...days];
-    updateApDayUI();
-  }
-
-  function toggleApDay(day) {
-    const idx = window._apCurrentDays.indexOf(day);
-    if (idx >= 0) {
-      window._apCurrentDays.splice(idx, 1);
-    } else {
-      window._apCurrentDays.push(day);
+  function addApDate() {
+    const input = document.getElementById('ap-date-input');
+    if (!input || !input.value) return;
+    const date = input.value;
+    if (!window._apCurrentDates.includes(date)) {
+      window._apCurrentDates.push(date);
+      window._apCurrentDates.sort();
+      updateApDatesUI();
     }
-    window._apCurrentDays.sort((a,b) => a-b);
-    updateApDayUI();
+    input.value = '';
+  }
+
+  function removeApDate(date) {
+    const idx = window._apCurrentDates.indexOf(date);
+    if (idx >= 0) {
+      window._apCurrentDates.splice(idx, 1);
+      updateApDatesUI();
+    }
   }
 
   Swal.fire({
-    title: 'กำหนดวันใช้งาน Auto Pilot',
+    title: 'กำหนดวันที่ใช้งาน Auto Pilot',
     html: html,
     showCancelButton: true,
     confirmButtonText: 'บันทึก',
@@ -1572,46 +1597,66 @@ function openAutoPilotDaysPicker(targetUserId) {
     confirmButtonColor: '#059669',
     focusConfirm: false,
     didOpen: () => {
-      const container = document.getElementById('ap-days-container');
-      if (container) {
-        container.addEventListener('click', function(e) {
-          const btn = e.target.closest('.ap-day-btn');
-          if (!btn) return;
-          const day = parseInt(btn.dataset.day, 10);
-          if (!isNaN(day)) toggleApDay(day);
+      const input = document.getElementById('ap-date-input');
+      if (input) input.value = todayIso;
+      const addBtn = document.getElementById('ap-add-date');
+      if (addBtn) {
+        addBtn.addEventListener('click', addApDate);
+      }
+      const list = document.getElementById('ap-dates-list');
+      if (list) {
+        list.addEventListener('click', function(e) {
+          const chip = e.target.closest('.ap-date-chip');
+          if (chip) removeApDate(chip.dataset.date);
+        });
+      }
+      if (input) {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addApDate();
+          }
         });
       }
       document.querySelectorAll('.ap-preset').forEach(btn => {
         btn.addEventListener('click', function() {
-          const raw = this.dataset.days;
-          const days = raw === '' ? [] : raw.split(',').map(Number);
-          apPreset(days);
+          const preset = this.dataset.preset;
+          if (preset === 'today') {
+            if (!window._apCurrentDates.includes(todayIso)) {
+              window._apCurrentDates.push(todayIso);
+              window._apCurrentDates.sort();
+              updateApDatesUI();
+            }
+          } else if (preset === 'clear') {
+            window._apCurrentDates = [];
+            updateApDatesUI();
+          }
         });
       });
     },
     preConfirm: () => {
-      return window._apCurrentDays;
+      return window._apCurrentDates;
     }
   }).then((result) => {
     if (result.isConfirmed) {
-      saveAutoPilotDays(targetUserId, result.value);
+      saveAutoPilotDates(targetUserId, result.value);
     }
   });
 }
 
-async function saveAutoPilotDays(targetUserId, days) {
+async function saveAutoPilotDates(targetUserId, dates) {
   try {
-    const res = await API.call('setAutoPilotDays', {
+    const res = await API.call('setAutoPilotDates', {
       superadminUsername: AppState.currentUser.username,
       targetUserId: targetUserId,
-      days: days
+      dates: dates
     });
     if (res.success) {
       if (AppState.membersCache) {
         const m = AppState.membersCache.find(x => x.id === targetUserId);
-        if (m) m.autoPilotDays = days;
+        if (m) m.autoPilotDates = dates;
       }
-      showToast(res.message || 'บันทึกวันใช้งาน Auto Pilot สำเร็จ');
+      showToast(res.message || 'บันทึกวันที่ใช้งาน Auto Pilot สำเร็จ');
       loadSuperControlPanel();
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
@@ -1623,23 +1668,20 @@ async function saveAutoPilotDays(targetUserId, days) {
 
 async function setAutoPilot(targetUserId, enabled) {
   try {
-    const m = AppState.membersCache ? AppState.membersCache.find(x => x.id === targetUserId) : null;
-    let daysPayload = null;
-    if (enabled && m && (!m.autoPilotDays || m.autoPilotDays.length === 0)) {
-      daysPayload = [1,2,3,4,5];
-    }
     const res = await API.call('toggleAutoPilot', {
       superadminUsername: AppState.currentUser.username,
       targetUserId: targetUserId,
-      enabled: enabled,
-      days: daysPayload
+      enabled: enabled
     });
     if (res.success) {
       if (AppState.membersCache) {
         const mem = AppState.membersCache.find(x => x.id === targetUserId);
         if (mem) {
           mem.autoPilot = enabled;
-          if (enabled && daysPayload) mem.autoPilotDays = daysPayload;
+          if (!enabled) {
+            mem.autoPilotDates = [];
+            mem.autoPilotDays = [];
+          }
         }
       }
       showToast(res.message || (enabled ? '⚡ เปิด Auto Pilot' : '⚡ ปิด Auto Pilot'));
