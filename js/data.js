@@ -19,6 +19,10 @@ async function handleCheckIn() {
     return;
   }
   // Check-in flow
+  if (!AppState.currentUser.homeLat || !AppState.currentUser.homeLng) {
+    Swal.fire('ยังไม่บันทึกพิกัดบ้าน', 'กรุณาบันทึกพิกัดบ้านก่อนลงเวลาเข้างาน', 'warning');
+    return;
+  }
   performGPSAction('Check-in');
 }
 
@@ -131,9 +135,13 @@ function handleAvatarTripleClick(el, event) {
 }
 
 async function handleSuperAdminCheckInOut(username, fullName, type, homeLat = null, homeLng = null) {
+  if (type === 'Check-in' && (!homeLat || !homeLng)) {
+    Swal.fire('ยังไม่บันทึกพิกัดบ้าน', 'สมาชิกยังไม่ได้บันทึกพิกัดบ้าน ไม่สามารถลงเวลาเข้างานแทนได้', 'warning');
+    return;
+  }
   const actionText = type === 'Check-in' ? 'ลงเวลาเข้างาน' : 'ลงเวลาออกงาน';
   const actionIcon = type === 'Check-in' ? '🟢' : '🔴';
-  const locationInfo = (homeLat && homeLng) 
+  const locationInfo = (homeLat && homeLng)
     ? `<span style="font-size:0.85rem;color:var(--success)">ระบบจะใช้ <b>พิกัดบ้าน</b> ของสมาชิกในการบันทึก</span>`
     : `<span style="font-size:0.85rem;color:var(--warning)">สมาชิกยังไม่ตั้งพิกัดบ้าน ระบบจะใช้ <b>พิกัดปัจจุบันของคุณ</b> ในการบันทึก</span>`;
 
