@@ -1228,12 +1228,15 @@ async function exportToPDF() {
       const earlyCell = s.isEarlyOut
         ? '<span style="color:#f59e0b;font-weight:700;">ออกก่อนเวลา</span>'
         : '<span style="color:#10b981;">ปกติ</span>';
+      const checkOutCell = s.isMissingCheckout
+        ? '<span style="color:#ef4444;font-weight:700;">ไม่ลงชื่อออกงาน</span>'
+        : escHtml(s.checkOutTime || '-');
       return `<tr>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${i + 1}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(s.date)}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;">${escHtml(u.fullName || '-')}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.checkInTime || '-')}</td>
-        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.checkOutTime || '-')}</td>
+        <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${checkOutCell}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${escHtml(s.workingHoursStr)}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${lateCell}</td>
         <td style="border:1px solid #cbd5e1;padding:8px;text-align:center;">${earlyCell}</td>
