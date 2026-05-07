@@ -1390,7 +1390,10 @@ async function loadSuperControlPanel() {
               <strong style="color:#059669;">Auto Pilot</strong>
             </div>
             <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ตามวันที่เลือก<br>สุ่มเวลาเข้า 07:30-08:29 / ออก 16:30-17:30</div>
-            <button onclick="clearAutoPilotLegacy()" style="margin-top:8px;background:#ef4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">🗑️ ล้างข้อมูลวันเก่า (autoPilotDays)</button>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button onclick="clearAutoPilotLegacy()" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">🗑️ ล้างข้อมูลวันเก่า</button>
+              <button onclick="checkAutoPilotDateSummary()" style="background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">📋 ตรวจสอบวันที่ใช้งาน</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1692,6 +1695,46 @@ async function clearAutoPilotLegacy() {
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
     }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function checkAutoPilotDateSummary() {
+  try {
+    const res = await API.call('getAutoPilotDateSummary', {
+      superadminUsername: AppState.currentUser.username
+    });
+    if (!res.success) {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+      return;
+    }
+
+    const rows = res.summary || [];
+    if (rows.length === 0) {
+      Swal.fire('📋 สรุปวันที่ใช้ Auto Pilot', 'ไม่มี user ที่เปิด Auto Pilot พร้อมกำหนดวันที่', 'info');
+      return;
+    }
+
+    const html = rows.map(r => {
+      const thaiDate = formatThaiDateFromIso(r.date);
+      const userList = r.users.map(u => `<span style="background:#f3f4f6;border-radius:4px;padding:1px 6px;font-size:0.75rem;">${escHtml(u)}</span>`).join(' ');
+      return `<div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;padding:8px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
+        <div style="min-width:110px;font-weight:700;color:#059669;">${thaiDate}</div>
+        <div style="flex:1;">
+          <div style="font-size:0.8rem;color:#374151;margin-bottom:4px;">${r.count} คน</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">${userList}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    Swal.fire({
+      title: '📋 วันที่ใช้ Auto Pilot (เรียงตามวัน)',
+      html: `<div style="max-height:400px;overflow-y:auto;text-align:left;">${html}</div>`,
+      confirmButtonText: 'ปิด',
+      confirmButtonColor: '#059669',
+      width: 600
+    });
   } catch (e) {
     Swal.fire('ผิดพลาด', e.message, 'error');
   }
