@@ -1389,7 +1389,8 @@ async function loadSuperControlPanel() {
               <span style="font-size:1.1rem;">⚡</span>
               <strong style="color:#059669;">Auto Pilot</strong>
             </div>
-            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ทุกวัน<br>สุ่มเวลาเข้า 07:00-08:20 / ออก 16:30-17:30</div>
+            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ตามวันที่เลือก<br>สุ่มเวลาเข้า 07:30-08:29 / ออก 16:30-17:30</div>
+            <button onclick="clearAutoPilotLegacy()" style="margin-top:8px;background:#ef4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">🗑️ ล้างข้อมูลวันเก่า (autoPilotDays)</button>
           </div>
         </div>
       </div>
@@ -1658,6 +1659,36 @@ async function saveAutoPilotDates(targetUserId, dates) {
       }
       showToast(res.message || 'บันทึกวันที่ใช้งาน Auto Pilot สำเร็จ');
       loadSuperControlPanel();
+    } else {
+      Swal.fire('ผิดพลาด', res.message, 'error');
+    }
+  } catch (e) {
+    Swal.fire('ผิดพลาด', e.message, 'error');
+  }
+}
+
+async function clearAutoPilotLegacy() {
+  try {
+    const confirm = await Swal.fire({
+      title: 'ยืนยันล้างข้อมูลวันเก่า',
+      text: 'จะลบ autoPilotDays เก่าออกจากทุก user ในระบบ ผู้ใช้ต้องเลือกวันที่ใหม่ผ่าน UI',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ลบ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444'
+    });
+    if (!confirm.isConfirmed) return;
+
+    const res = await API.call('clearAutoPilotLegacyDays', {
+      superadminUsername: AppState.currentUser.username
+    });
+    if (res.success) {
+      showToast(res.message);
+      // Clear legacy from cache
+      if (AppState.membersCache) {
+        AppState.membersCache.forEach(m => delete m.autoPilotDays);
+      }
     } else {
       Swal.fire('ผิดพลาด', res.message, 'error');
     }
