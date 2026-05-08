@@ -1397,7 +1397,7 @@ async function loadSuperControlPanel() {
               <span style="font-size:1.1rem;">⚡</span>
               <strong style="color:#059669;">Auto Pilot</strong>
             </div>
-            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ตามวันที่เลือก<br>สุ่มเวลาเข้า 07:30-08:29 / ออก 16:30-17:30</div>
+            <div style="font-size:0.8rem;color:var(--gray);line-height:1.5;">ลงเวลาเข้า/ออกงาน<strong>อัตโนมัติ</strong>ตามวันที่เลือก<br>สุ่มเวลาเข้า 07:30-08:00 / ออก 16:30-17:30</div>
             <div style="display:flex;gap:6px;margin-top:8px;">
               <button onclick="clearAutoPilotLegacy()" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">🗑️ ล้างข้อมูลวันเก่า</button>
               <button onclick="checkAutoPilotDateSummary()" style="background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:0.7rem;cursor:pointer;">📋 ตรวจสอบวันที่ใช้งาน</button>
