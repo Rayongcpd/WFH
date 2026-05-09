@@ -6,7 +6,16 @@
 // ============================================
 // CHECK-IN / CHECK-OUT
 // ============================================
+
+// Lock flags ป้องกันการกดซ้ำ
+let _gpsActionInProgress = false;
+let _registerInProgress = false;
+
 async function handleCheckIn() {
+  if (_gpsActionInProgress) {
+    Swal.fire('กำลังประมวลผล', 'กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล', 'warning');
+    return;
+  }
   const last = AppState.latestLog;
   if (last && last.type === 'Check-in') {
     // Check-out flow
@@ -27,6 +36,11 @@ async function handleCheckIn() {
 }
 
 async function performGPSAction(type, targetUser = null) {
+  if (_gpsActionInProgress) {
+    Swal.fire('กำลังประมวลผล', 'กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล', 'warning');
+    return;
+  }
+  _gpsActionInProgress = true;
   showLoading(true);
   try {
     let lat, lng, accuracy;
@@ -90,6 +104,8 @@ async function performGPSAction(type, targetUser = null) {
   } catch (err) {
     showLoading(false);
     Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถระบุตำแหน่งได้', 'error');
+  } finally {
+    _gpsActionInProgress = false;
   }
 }
 
@@ -984,8 +1000,15 @@ function openRegisterModal() { openModal('registerModal'); }
 
 async function handleRegister(e) {
   e.preventDefault();
+  if (_registerInProgress) {
+    Swal.fire('กำลังประมวลผล', 'กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล', 'warning');
+    return;
+  }
+  _registerInProgress = true;
+
   const username = document.getElementById('regUser').value.trim();
   if (!/^[A-Za-z0-9]+$/.test(username)) {
+    _registerInProgress = false;
     Swal.fire('Username ไม่ถูกต้อง', 'ต้องเป็นภาษาอังกฤษหรือตัวเลขเท่านั้น', 'warning');
     return;
   }
@@ -1019,6 +1042,7 @@ async function handleRegister(e) {
       Swal.fire('ผิดพลาด', res.message, 'error');
     }
   } catch (e) { showLoading(false); Swal.fire('ผิดพลาด', e.message, 'error'); }
+  finally { _registerInProgress = false; }
 }
 
 function openForgotModal() { openModal('forgotModal'); }
