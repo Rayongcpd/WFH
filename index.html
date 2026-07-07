@@ -869,6 +869,39 @@
     </div>
   </div>
 
+  <!-- Add Log Modal (Superadmin only) -->
+  <div id="addLogModal" class="modal-overlay" onclick="if(event.target===this)closeModal('addLogModal')">
+    <div class="modal-card">
+      <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
+        <h3><i class="fi fi-rr-clock" style="margin-right:8px"></i> เพิ่มข้อมูลการเข้า-ออกงาน</h3>
+        <button class="modal-close" onclick="closeModal('addLogModal')"><i class="fi fi-rr-cross-small"></i></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitAddManualLog(event)">
+          <input type="hidden" id="addLogUsername">
+          <div class="form-group">
+            <label>ชื่อผู้ปฏิบัติงาน</label>
+            <input type="text" id="addLogFullName" class="form-input" readonly style="background:var(--bg)">
+          </div>
+          <div class="form-group">
+            <label>ประเภทรายการ *</label>
+            <select id="addLogType" class="form-input" required>
+              <option value="Check-in">🟢 เข้างาน (Check-in)</option>
+              <option value="Check-out">🔴 ออกงาน (Check-out)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>วันที่และเวลา *</label>
+            <input type="datetime-local" id="addLogDateTime" class="form-input" required>
+          </div>
+          <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;">
+            <i class="fi fi-rr-check" style="margin-right:6px"></i> บันทึกข้อมูล
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="js/api.js"></script>
   <script src="js/skeleton.js"></script>
   <script src="js/app.js"></script>

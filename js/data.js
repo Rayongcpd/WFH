@@ -1445,6 +1445,7 @@ async function loadSuperControlPanel() {
               <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">
                 <span style="color:#059669;">⚡</span> Auto Pilot
               </th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);">จัดการเวลา</th>
             </tr>
           </thead>
           <tbody>
@@ -1485,6 +1486,13 @@ async function loadSuperControlPanel() {
                     <span class="mode-toggle-slider auto" style="${!hasHome ? 'opacity:0.4;cursor:not-allowed;' : ''}"></span>
                   </label>
                   ${m.autoPilot ? `<div onclick="openAutoPilotDatesPicker('${m.id}')" style="margin-top:4px;cursor:pointer;font-size:0.62rem;color:#059669;font-weight:600;letter-spacing:0.5px;background:#ecfdf5;border-radius:4px;padding:1px 4px;display:inline-block;">${formatAutoPilotDates(m.autoPilotDates)}</div>` : ''}
+                </td>
+                <td style="padding:10px 12px;text-align:center;">
+                  <button onclick="openAddLogModal('${m.username}', '${escHtml(m.fullName)}')" 
+                    style="background:var(--primary-bg);color:var(--primary);border:1px solid #bae6fd;border-radius:6px;padding:4px 8px;font-size:0.75rem;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;"
+                    title="เพิ่มข้อมูลการเข้า-ออกงาน">
+                    <i class="fi fi-rr-plus"></i> เพิ่มเวลา
+                  </button>
                 </td>
               </tr>`;
             }).join('')}
@@ -1799,5 +1807,53 @@ async function setAutoPilot(targetUserId, enabled) {
   } catch (e) {
     Swal.fire('ผิดพลาด', e.message, 'error');
     loadSuperControlPanel();
+  }
+}
+
+function openAddLogModal(username, fullName) {
+  document.getElementById('addLogUsername').value = username;
+  document.getElementById('addLogFullName').value = fullName;
+  document.getElementById('addLogType').value = 'Check-in';
+
+  // Set default datetime to current local time formatted for datetime-local
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  const localISOTime = new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+  document.getElementById('addLogDateTime').value = localISOTime;
+
+  openModal('addLogModal');
+}
+
+async function submitAddManualLog(e) {
+  e.preventDefault();
+  const username = document.getElementById('addLogUsername').value;
+  const fullName = document.getElementById('addLogFullName').value;
+  const type = document.getElementById('addLogType').value;
+  const dateTimeStr = document.getElementById('addLogDateTime').value;
+
+  if (!username || !type || !dateTimeStr) {
+    Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const res = await API.call('addManualLog', {
+      superadminUsername: AppState.currentUser.username,
+      targetUsername: username,
+      type: type,
+      dateTimeStr: dateTimeStr
+    });
+    showLoading(false);
+    if (res.success) {
+      closeModal('addLogModal');
+      Swal.fire('สำเร็จ', res.message, 'success');
+      loadSuperControlPanel();
+    } else {
+      Swal.fire('ล้มเหลว', res.message, 'error');
+    }
+  } catch (err) {
+    showLoading(false);
+    Swal.fire('ข้อผิดพลาด', err.message, 'error');
   }
 }
